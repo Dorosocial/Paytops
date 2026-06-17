@@ -521,35 +521,37 @@ function updateDots(id,val){
 
 function launchApp(){
   var cfg=IND[S.ind];
-  // Generate a real staff token
+  // Generate staff token
   S.staffToken=Math.random().toString(36).substr(2,10);
   S.staffLink=window.location.origin+window.location.pathname+'?staff='+S.staffToken;
-
-  // Store staff token in sessionStorage so staff link works
   try{
     sessionStorage.setItem('paytops_staff_token',S.staffToken);
     sessionStorage.setItem('paytops_biz_name',S.bizName);
     sessionStorage.setItem('paytops_ind',S.ind);
   }catch(e){}
-
   // doc chips
   S.selDoc=cfg.docs[0];
   var dc=document.getElementById('doc-chips-dash');
-  dc.innerHTML=cfg.docs.map(function(d,i){return '<button class="chip'+(i===0?' on':'')+'" onclick="pickDoc(\''+d+'\',this)">'+d+'</button>';}).join('');
+  if(dc)dc.innerHTML=cfg.docs.map(function(d,i){return '<button class="chip'+(i===0?' on':'')+'" onclick="pickDoc(\''+d+'\',this)">'+d+'</button>';}).join('');
   // filters
   var fc=document.getElementById('filter-chips');
-  fc.innerHTML=['All'].concat(cfg.docs).map(function(f){return '<button class="chip'+(f==='All'?' on':'')+'" onclick="setFilter(\''+f+'\',this)">'+f+'</button>';}).join('');
-  // labels
+  if(fc)fc.innerHTML=['All'].concat(cfg.docs).map(function(f){return '<button class="chip'+(f==='All'?' on':'')+'" onclick="setFilter(\''+f+'\',this)">'+f+'</button>';}).join('');
+  // stat labels
   cfg.stats.forEach(function(l,i){var el=document.getElementById('sl'+(i+1));if(el)el.textContent=l;});
-  document.getElementById('set-biz-name').textContent=S.bizName;
-  document.getElementById('set-industry').textContent=cfg.name;
-  document.getElementById('staff-biz-label').textContent=S.bizName;
-  document.getElementById('staff-link-text').textContent=S.staffLink;
-  document.getElementById('rec-title').textContent=cfg.name+' records';
-  document.getElementById('dz-hint-dash').textContent=cfg.docs.join(' · ');
-  renderStaff(); loadDemoRecs();
-  showScreen('scr-pin');
-  document.getElementById('pin-biz-name').textContent='Enter PIN to access '+S.bizName;
+  // text labels
+  var el;
+  el=document.getElementById('set-biz-name');if(el)el.textContent=S.bizName;
+  el=document.getElementById('set-industry');if(el)el.textContent=cfg.name;
+  el=document.getElementById('staff-biz-label');if(el)el.textContent=S.bizName;
+  el=document.getElementById('staff-biz-label2');if(el)el.textContent=S.bizName;
+  el=document.getElementById('rec-title');if(el)el.textContent=cfg.name+' records';
+  el=document.getElementById('dz-hint-dash');if(el)el.textContent=cfg.docs.join(' · ');
+  el=document.getElementById('pin-biz-name');if(el)el.textContent='Enter PIN to access '+S.bizName;
+  renderStaff();
+  loadDemoRecs();
+  // Go straight to dashboard — no need to re-enter PIN after just setting it
+  showScreen('scr-dash');
+  showTab('home');
 }
 function pickDoc(d,el){
   document.querySelectorAll('#doc-chips-dash .chip').forEach(function(c){c.classList.remove('on');});
