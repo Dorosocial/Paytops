@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080C18">
+<title>Paytops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#080C18;--ink2:#141929;--ink3:#1E2740;
+  --mid:#64748B;--sub:#94A3B8;--line:#E2E8F0;
+  --surf:#F7F8FC;--w:#FFFFFF;
+  --ind:#4F46E5;--indl:#EEF2FF;--indm:#818CF8;
+  --em:#059669;--eml:#ECFDF5;
+  --am:#B45309;--aml:#FFFBEB;
+  --red:#DC2626;--redl:#FEE2E2;
+  --gold:#F59E0B;--r:14px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--surf);color:var(--ink);-webkit-font-smoothing:antialiased}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.bb{font-family:'Bricolage Grotesque',sans-serif}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:11px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;text-align:center;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn-ind{background:var(--ind);color:#fff}
+.btn-ind:hover{opacity:.9}
+.btn-surf{background:var(--surf);color:var(--ink);border:1.5px solid var(--line)}
+.btn-surf:hover{border-color:var(--ind);color:var(--ind)}
+.btn-ghost{background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15)}
+.btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,.3)}
+.btn-sm{padding:9px 16px;font-size:12px;border-radius:8px;width:auto;display:inline-block}
+.btn-danger{background:var(--redl);color:var(--red);border:1.5px solid #FECACA}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.field input,.field select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);outline:none;background:var(--w);transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:var(--ind)}
+.field input::placeholder{color:var(--sub)}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin:20px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);transition:all .2s}
+.pin-dot.filled{background:var(--ind);border-color:var(--ind)}
+.pin-dot.error{background:var(--red);border-color:var(--red);animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.np-btn{padding:16px;background:var(--w);border:1.5px solid var(--line);border-radius:12px;font-size:20px;font-weight:600;cursor:pointer;transition:all .12s;font-family:'Bricolage Grotesque',sans-serif;color:var(--ink)}
+.np-btn:active{background:var(--indl);border-color:var(--ind);transform:scale(.96)}
+.np-btn.del{font-size:14px;color:var(--mid)}
+.np-btn.empty{opacity:0;pointer-events:none}
+.card{background:var(--w);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.card+.card{margin-top:12px}
+.topbar{background:var(--w);border-bottom:1px solid var(--line);padding:0 18px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:10}
+.topbar-logo{font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
+.topbar-logo em{color:var(--ind);font-style:normal}
+.ti{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--line);background:var(--surf);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.ti:hover{border-color:var(--ind);background:var(--indl)}
+.scroll-body{flex:1;overflow-y:auto;padding:16px 18px 100px;-webkit-overflow-scrolling:touch}
+.bottom-nav{display:flex;background:var(--w);border-top:1px solid var(--line);padding:8px 0 calc(8px + env(safe-area-inset-bottom));flex-shrink:0}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;cursor:pointer;transition:color .15s;color:var(--sub);font-size:10px;font-weight:600;letter-spacing:.3px;border:none;background:none}
+.nav-tab.active{color:var(--ind)}
+.nav-tab.active svg{stroke:var(--ind)}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-box{background:var(--w);border:1px solid var(--line);border-radius:var(--r);padding:16px 14px}
+.stat-box.dark{background:var(--ink);border-color:var(--ink)}
+.s-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--sub);margin-bottom:6px}
+.stat-box.dark .s-lbl{color:rgba(255,255,255,.35)}
+.s-val{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1}
+.stat-box.dark .s-val{color:#fff}
+.s-val.em{color:var(--em)}
+.s-val.am{color:var(--am)}
+.s-sub{font-size:11px;color:var(--sub);margin-top:4px}
+.stat-box.dark .s-sub{color:rgba(255,255,255,.25)}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mid)}
+.rec-row{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-radius:11px;background:var(--surf);border:1px solid var(--line);margin-bottom:7px;cursor:pointer;transition:border-color .15s;animation:rise .3s ease both}
+.rec-row:hover{border-color:var(--ind)}
+@keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.rec-l{display:flex;align-items:center;gap:11px}
+.rec-av{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rec-name{font-size:13px;font-weight:600;color:var(--ink)}
+.rec-sub{font-size:11px;color:var(--mid);margin-top:1px}
+.rec-r{text-align:right}
+.rec-amt{font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:700}
+.rec-amt.cr{color:var(--em)}
+.rec-amt.dr{color:var(--am)}
+.rec-time{font-size:10px;color:var(--sub);margin-top:2px}
+.type-pill{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:20px;margin-top:3px}
+.chev{color:var(--line);font-size:14px;margin-left:6px;flex-shrink:0}
+.chips{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:5px 12px;border-radius:20px;border:1.5px solid var(--line);font-size:11px;font-weight:600;color:var(--mid);cursor:pointer;background:var(--w);white-space:nowrap;transition:all .12s;font-family:'Inter',sans-serif;flex-shrink:0}
+.chip:hover{border-color:var(--ind);color:var(--ind)}
+.chip.on{border-color:var(--ind);background:var(--indl);color:var(--ind)}
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none}
+.search-input{width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);background:var(--w);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--ind)}
+.search-input::placeholder{color:var(--sub)}
+@keyframes border-pulse{0%,100%{border-color:#C7D2FE}50%{border-color:var(--ind)}}
+.drop-zone{border:2px dashed #C7D2FE;border-radius:13px;padding:36px 20px;text-align:center;cursor:pointer;position:relative;background:#FAFBFF;animation:border-pulse 2.4s ease-in-out infinite;transition:background .2s}
+.drop-zone:hover{background:var(--indl);animation:none;border-color:var(--ind)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{width:44px;height:44px;border-radius:12px;background:var(--indl);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.dz-main{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.dz-hint{font-size:12px;color:var(--mid)}
+.doc-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.parse-preview{width:100%;max-height:160px;object-fit:contain;border-radius:10px;border:1px solid var(--line);margin-bottom:14px;display:block}
+.steps{display:flex;flex-direction:column;gap:6px}
+.step-row{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:9px;font-size:13px;color:var(--mid);background:var(--surf);transition:all .25s}
+.step-row.on{background:var(--indl);color:var(--ind);font-weight:600}
+.step-row.done{background:var(--eml);color:var(--em)}
+.spin{width:14px;height:14px;border:2px solid #C7D2FE;border-top-color:var(--ind);border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.ok-badge{background:var(--eml);color:var(--em);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:4px}
+.fields-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.f-box{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:11px 12px}
+.f-box.wide{grid-column:span 2}
+.f-key{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--sub);margin-bottom:3px}
+.f-val{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3}
+.f-val.money{font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700;color:var(--em);letter-spacing:-.3px}
+.f-val.warn{color:var(--am)}
+.overlay{position:fixed;inset:0;background:rgba(8,12,24,.45);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+.overlay.on{opacity:1;pointer-events:all}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--w);border-radius:20px 20px 0 0;z-index:201;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1);max-height:88vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)}
+.drawer.on{transform:translateY(0)}
+.drawer-handle{width:36px;height:4px;background:var(--line);border-radius:2px;margin:12px auto 0}
+.drawer-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+.drawer-av{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.drawer-name{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.3px;line-height:1.2}
+.drawer-type{font-size:12px;color:var(--mid);margin-top:2px}
+.close-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);background:var(--surf);cursor:pointer;font-size:13px;color:var(--mid);display:flex;align-items:center;justify-content:center}
+.drawer-amt-wrap{padding:16px 20px;background:var(--surf);border-bottom:1px solid var(--line)}
+.drawer-amt-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--sub);margin-bottom:3px}
+.drawer-amt-val{font-family:'Bricolage Grotesque',sans-serif;font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1;color:var(--em)}
+.drawer-amt-val.dr{color:var(--am)}
+.drawer-rows{padding:4px 20px 16px}
+.d-row{display:flex;align-items:flex-start;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);gap:16px}
+.d-row:last-child{border-bottom:none}
+.d-key{font-size:12px;color:var(--mid);flex-shrink:0;min-width:110px}
+.d-val{font-size:13px;font-weight:600;color:var(--ink);text-align:right}
+.d-val.ok{color:var(--em)}
+.d-val.warn{color:var(--am)}
+.notif-item{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line)}
+.notif-item:last-child{border-bottom:none}
+.notif-dot-wrap{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notif-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.notif-sub{font-size:11px;color:var(--mid)}
+.notif-time{font-size:10px;color:var(--sub);margin-top:3px}
+.unread-dot{width:7px;height:7px;border-radius:50%;background:var(--ind);flex-shrink:0;margin-top:4px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:30px;font-size:13px;font-weight:500;transition:transform .28s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.notif-badge{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--w);display:none}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.setting-row:last-child{border-bottom:none}
+.setting-l{display:flex;align-items:center;gap:12px}
+.setting-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--indl);flex-shrink:0}
+.setting-label{font-size:14px;font-weight:600;color:var(--ink)}
+.setting-sub{font-size:11px;color:var(--mid);margin-top:1px}
+@keyframes ping{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.12);opacity:.15}}
+.staff-upload-btn{width:100px;height:100px;border-radius:50%;background:var(--ind);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s,opacity .15s;margin:0 auto 24px;position:relative;border:none}
+.staff-upload-btn:hover{opacity:.9;transform:scale(1.04)}
+.staff-upload-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;border-radius:50%;width:100%;height:100%}
+.staff-upload-btn::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(79,70,229,.25);animation:ping 2s ease-in-out infinite}
+.ob-screen{background:var(--ink)}
+.ob-inner{flex:1;overflow-y:auto;padding:80px 24px 40px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ob-card{background:var(--w);border-radius:20px;padding:28px 24px;width:100%;max-width:420px}
+.ob-logo{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;color:var(--w);letter-spacing:-1px;margin-bottom:4px}
+.ob-logo em{color:var(--ind);font-style:normal}
+.ob-tag{font-size:13px;color:rgba(255,255,255,.35);margin-bottom:32px}
+.ob-eyebrow{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--ind);margin-bottom:6px}
+.ob-title{font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.3px;margin-bottom:20px}
+.ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:20px}
+.ind-tile{border:1.5px solid var(--line);border-radius:11px;padding:13px 11px;cursor:pointer;transition:all .15s;background:var(--w);text-align:left;display:flex;align-items:center;gap:10px}
+.ind-tile:hover{border-color:var(--ind);background:var(--indl)}
+.ind-tile.sel{border-color:var(--ind);background:var(--indl)}
+.ind-tile-icon{width:32px;height:32px;border-radius:8px;background:var(--indl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ind-tile.sel .ind-tile-icon{background:rgba(79,70,229,.15)}
+.ind-tile-name{font-size:12px;font-weight:700;color:var(--ink);line-height:1.2}
+.ind-tile-desc{font-size:10px;color:var(--mid);margin-top:1px}
+.pin-screen{background:var(--ink);align-items:center;justify-content:center;padding:40px 28px}
+.pin-logo{font-family:'Bricolage Grotesque',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:6px}
+.pin-logo em{color:var(--ind);font-style:normal}
+.pin-sub{font-size:13px;color:rgba(255,255,255,.35);margin-bottom:36px}
+.report-card{background:var(--w);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px}
+.report-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.report-val{font-family:'Bricolage Grotesque',sans-serif;font-size:28px;font-weight:800;color:var(--em);letter-spacing:-.8px;margin-bottom:2px}
+.report-sub{font-size:11px;color:var(--mid)}
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:60px;margin-top:14px}
+.bar{flex:1;border-radius:4px 4px 0 0;background:var(--indl);min-height:4px}
+.bar.today{background:var(--ind)}
+.bar-labels{display:flex;gap:5px;margin-top:5px}
+.bar-lbl{flex:1;font-size:9px;color:var(--sub);text-align:center}
+.staff-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}
+.staff-item:last-child{border-bottom:none}
+.staff-av{width:36px;height:36px;border-radius:50%;background:var(--indl);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;color:var(--ind)}
+.staff-name{font-size:13px;font-weight:600;color:var(--ink)}
+.staff-role{font-size:11px;color:var(--mid);margin-top:1px}
+.link-box{background:var(--surf);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.link-text{font-size:12px;color:var(--mid);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.empty{text-align:center;padding:40px 20px}
+.empty-icon{width:52px;height:52px;border-radius:14px;background:var(--indl);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.empty p{font-size:13px;color:var(--mid);line-height:1.6}
+.staff-hero{background:var(--ink);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center}
+.staff-title{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-.4px}
+.staff-sub{font-size:14px;color:rgba(255,255,255,.45);line-height:1.6;max-width:260px}
+.staff-rec-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.staff-rec-item:last-child{border-bottom:none}
+.staff-rec-dot{width:8px;height:8px;border-radius:50%;background:var(--em);flex-shrink:0}
+.staff-rec-name{font-size:13px;font-weight:600;color:var(--ink);flex:1}
+.staff-rec-time{font-size:11px;color:var(--mid)}
+@media(max-width:380px){.stats-grid{grid-template-columns:1fr}.fields-g{grid-template-columns:1fr}.f-box.wide{grid-column:span 1}}
+</style>
+</head>
+<body>
+<!-- SCREEN 1: ONBOARDING -->
+<div class="screen active ob-screen" id="scr-onboard">
+  <div class="ob-inner">
+    <div style="width:100%;max-width:420px">
+      <div class="ob-logo">Pay<em>tops</em></div>
+      <div class="ob-tag">Photo in. Business sorted.</div>
+      <div class="ob-card" id="ob-s1">
+        <div class="ob-eyebrow">Step 1 of 3</div>
+        <div class="ob-title">What type of business are you?</div>
+        <div class="ind-grid">
+          <button class="ind-tile" onclick="pickInd('school',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><div><div class="ind-tile-name">School</div><div class="ind-tile-desc">Fee slips, receipts</div></div></button>
+          <button class="ind-tile" onclick="pickInd('wholesale',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div><div class="ind-tile-name">Wholesaler</div><div class="ind-tile-desc">Invoices, orders</div></div></button>
+          <button class="ind-tile" onclick="pickInd('logistics',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><div class="ind-tile-name">Logistics</div><div class="ind-tile-desc">Waybills, deliveries</div></div></button>
+          <button class="ind-tile" onclick="pickInd('microfinance',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div><div class="ind-tile-name">Microfinance</div><div class="ind-tile-desc">Loans, repayments</div></div></button>
+          <button class="ind-tile" onclick="pickInd('pharmacy',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></div><div><div class="ind-tile-name">Pharmacy</div><div class="ind-tile-desc">Prescriptions, stock</div></div></button>
+          <button class="ind-tile" onclick="pickInd('clinic',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div><div class="ind-tile-name">Clinic</div><div class="ind-tile-desc">Bills, patient records</div></div></button>
+          <button class="ind-tile" onclick="pickInd('construction',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div><div><div class="ind-tile-name">Construction</div><div class="ind-tile-desc">Material invoices</div></div></button>
+          <button class="ind-tile" onclick="pickInd('general',this)"><div class="ind-tile-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div><div><div class="ind-tile-name">General</div><div class="ind-tile-desc">Any document</div></div></button>
+        </div>
+        <button class="btn btn-ind" id="ob-next1" disabled onclick="toObS2()">Continue</button>
+      </div>
+      <div class="ob-card" id="ob-s2" style="display:none">
+        <button onclick="goBack(2)" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;padding:0;font-family:inherit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
+        <div class="ob-eyebrow">Step 2 of 3</div>
+        <div class="ob-title">Tell us about your business</div>
+        <div class="field"><label>Business name</label><input id="ob-biz" type="text" placeholder="e.g. Mensah Wholesale Ltd"></div>
+        <div class="field"><label>Your name</label><input id="ob-owner" type="text" placeholder="e.g. Kofi Mensah"></div>
+        <div class="field" style="margin-bottom:20px"><label>Location</label><input id="ob-loc" type="text" placeholder="e.g. Accra, Kumasi..."></div>
+        <button class="btn btn-ind" onclick="toObS3()">Continue</button>
+      </div>
+      <div class="ob-card" id="ob-s3" style="display:none">
+        <button onclick="goBack(3)" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;padding:0;font-family:inherit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
+        <div class="ob-eyebrow">Step 3 of 3</div>
+        <div class="ob-title">Set your dashboard PIN</div>
+        <p style="font-size:13px;color:var(--mid);margin-bottom:16px;line-height:1.6">This PIN protects your dashboard. Staff cannot access it without it.</p>
+        <div class="pin-dots" id="ob-dots"><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div></div>
+        <div class="numpad">
+          <button class="np-btn" onclick="obPinKey('1')">1</button><button class="np-btn" onclick="obPinKey('2')">2</button><button class="np-btn" onclick="obPinKey('3')">3</button>
+          <button class="np-btn" onclick="obPinKey('4')">4</button><button class="np-btn" onclick="obPinKey('5')">5</button><button class="np-btn" onclick="obPinKey('6')">6</button>
+          <button class="np-btn" onclick="obPinKey('7')">7</button><button class="np-btn" onclick="obPinKey('8')">8</button><button class="np-btn" onclick="obPinKey('9')">9</button>
+          <button class="np-btn empty"></button><button class="np-btn" onclick="obPinKey('0')">0</button><button class="np-btn del" onclick="obPinDel()">⌫</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: PIN LOCK -->
+<div class="screen pin-screen" id="scr-pin">
+  <div class="pin-logo" onclick="goBackFromPin()" style="cursor:pointer">Pay<em>tops</em></div>
+  <div class="pin-sub" id="pin-biz-name">Enter your PIN to continue</div>
+  <div style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:8px">Dashboard PIN</div>
+  <div class="pin-dots" id="pin-dots"><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div></div>
+  <div class="numpad" style="max-width:280px;width:100%">
+    <button class="np-btn" onclick="pinKey('1')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">1</button>
+    <button class="np-btn" onclick="pinKey('2')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">2</button>
+    <button class="np-btn" onclick="pinKey('3')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">3</button>
+    <button class="np-btn" onclick="pinKey('4')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">4</button>
+    <button class="np-btn" onclick="pinKey('5')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">5</button>
+    <button class="np-btn" onclick="pinKey('6')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">6</button>
+    <button class="np-btn" onclick="pinKey('7')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">7</button>
+    <button class="np-btn" onclick="pinKey('8')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">8</button>
+    <button class="np-btn" onclick="pinKey('9')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">9</button>
+    <button class="np-btn empty"></button>
+    <button class="np-btn" onclick="pinKey('0')" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:#fff">0</button>
+    <button class="np-btn del" onclick="pinDel()" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.5)">⌫</button>
+  </div>
+  <button class="btn btn-ghost" style="margin-top:24px;max-width:280px" onclick="switchToStaff()">I'm a staff member</button>
+</div>
+
+<!-- SCREEN 3: OWNER DASHBOARD -->
+<div class="screen" id="scr-dash">
+  <div class="topbar">
+    <div class="topbar-logo" onclick="showTab('home')" style="cursor:pointer">Pay<em>tops</em></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="position:relative">
+        <div class="ti" onclick="showTab('notifs')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div class="notif-badge" id="notif-badge"></div>
+        </div>
+      </div>
+      <div class="ti" onclick="lockDash()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME TAB -->
+  <div class="scroll-body" id="tab-home">
+    <div class="stats-grid">
+      <div class="stat-box dark"><div class="s-lbl" id="sl1">Received today</div><div class="s-val em" id="sv1">GHS 0</div><div class="s-sub" id="ss1">0 payments</div></div>
+      <div class="stat-box"><div class="s-lbl">This month</div><div class="s-val am" id="sv2">GHS 0</div><div class="s-sub" id="ss2">running total</div></div>
+      <div class="stat-box"><div class="s-lbl">Pending</div><div class="s-val" id="sv3">0</div><div class="s-sub">unpaid items</div></div>
+      <div class="stat-box"><div class="s-lbl">Docs parsed</div><div class="s-val" id="sv4">0</div><div class="s-sub">by Paytops AI</div></div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="sec-hd"><span class="sec-title">Upload document</span><button class="btn btn-surf btn-sm" onclick="runDemo()" style="background:var(--indl);border-color:var(--ind);color:var(--ind);display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Try demo</button></div>
+      <div class="doc-chips" id="doc-chips-dash"></div>
+      <div id="dz-dash">
+        <div class="drop-zone">
+          <input type="file" accept="image/*" id="file-dash" capture="environment">
+          <div class="dz-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+          <div class="dz-main">Take a photo or upload</div>
+          <div class="dz-hint" id="dz-hint-dash">Receipt · Invoice · Waybill · Any document</div>
+        </div>
+      </div>
+      <div id="parse-dash" style="display:none">
+        <div id="demo-doc-preview" style="display:none;margin-bottom:14px"></div>
+        <img class="parse-preview" id="prev-dash" src="" alt="" style="display:none">
+        <div class="steps" id="steps-dash"></div>
+      </div>
+      <div id="result-dash" style="display:none;margin-top:14px">
+        <div class="result-bar"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="ok-badge">Parsed</span><span style="font-size:12px;color:var(--mid)" id="res-type-dash"></span></div>
+        <div class="fields-g" id="fields-dash"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ind" style="flex:1;padding:12px;font-size:13px" onclick="saveRec()">Save to dashboard</button>
+          <button class="btn btn-surf" style="padding:12px 16px;font-size:13px;width:auto" onclick="resetUpload()">Discard</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec-hd"><span class="sec-title" id="rec-title">Records</span><button class="btn btn-surf btn-sm" onclick="exportCSV()">Export CSV</button></div>
+      <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-input" id="search-input" placeholder="Search by name, amount or type..." oninput="renderRecs()"></div>
+      <div class="chips" id="filter-chips"></div>
+      <div id="rec-list"></div>
+    </div>
+  </div>
+
+  <!-- REPORTS TAB -->
+  <div class="scroll-body" id="tab-reports" style="display:none">
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:16px">Reports</div>
+    <div class="report-card"><div class="report-title">Today's total</div><div class="report-val" id="rpt-today">GHS 0</div><div class="report-sub" id="rpt-today-sub">0 transactions</div><div class="bar-chart" id="bar-chart"></div><div class="bar-labels" id="bar-labels"></div></div>
+    <div class="report-card"><div class="report-title">This month</div><div class="report-val" id="rpt-month">GHS 0</div><div class="report-sub" id="rpt-month-sub">running total</div></div>
+    <div class="report-card"><div class="report-title">Documents parsed</div><div class="report-val" id="rpt-parsed">0</div><div class="report-sub">by Paytops AI this session</div></div>
+    <div class="report-card"><div class="report-title">Pending / unpaid</div><div class="report-val" style="color:var(--am)" id="rpt-pending">0</div><div class="report-sub">items flagged for follow-up</div></div>
+  </div>
+
+  <!-- NOTIFICATIONS TAB -->
+  <div class="scroll-body" id="tab-notifs" style="display:none">
+    <div class="sec-hd" style="margin-bottom:14px"><div style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px">Notifications</div><button class="btn btn-surf btn-sm" onclick="clearNotifs()">Clear all</button></div>
+    <div class="card"><div id="notif-list"><div class="empty"><div class="empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><p>No notifications yet. They appear here instantly when staff upload documents.</p></div></div></div>
+  </div>
+
+  <!-- STAFF TAB -->
+  <div class="scroll-body" id="tab-staff" style="display:none">
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:16px">Staff Access</div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="sec-title" style="margin-bottom:12px">Staff upload link</div>
+      <div class="link-box"><span class="link-text" id="staff-link-text">paytops.io/upload/xxxxxx</span><button class="btn btn-ind btn-sm" onclick="copyLink()">Copy</button></div>
+      <p style="font-size:12px;color:var(--mid);line-height:1.6">Share this link with your staff. They open it on any phone to upload documents. They cannot see your dashboard.</p>
+      <button class="btn btn-surf" style="margin-top:12px;font-size:13px;padding:10px" onclick="regenLink()">Regenerate link</button>
+    </div>
+    <div class="card"><div class="sec-hd" style="margin-bottom:14px"><span class="sec-title">Active staff</span><button class="btn btn-ind btn-sm" onclick="addStaff()">Add staff</button></div><div id="staff-list"></div></div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div class="scroll-body" id="tab-settings" style="display:none">
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:16px">Settings</div>
+    <div class="card">
+      <div class="setting-row" onclick="changePIN()"><div class="setting-l"><div class="setting-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div><div class="setting-label">Change PIN</div><div class="setting-sub">Update your dashboard PIN</div></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="setting-row" onclick="editBiz()"><div class="setting-l"><div class="setting-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div><div class="setting-label">Business details</div><div class="setting-sub" id="set-biz-name">My Business</div></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="setting-row"><div class="setting-l"><div class="setting-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div><div><div class="setting-label">Industry</div><div class="setting-sub" id="set-industry">General</div></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="setting-row" onclick="switchToStaff()"><div class="setting-l"><div class="setting-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="setting-label">Staff upload view</div><div class="setting-sub">Preview what your staff see</div></div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="setting-row" onclick="resetApp()"><div class="setting-l"><div class="setting-icon" style="background:var(--redl)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></div><div><div class="setting-label" style="color:var(--red)">Reset & start over</div><div class="setting-sub">Clear all data and restart</div></div></div></div>
+    </div>
+    <p style="font-size:11px;color:var(--sub);text-align:center;margin-top:20px">Paytops · Made in Ghana for African businesses</p>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-tab active" id="nav-home" onclick="showTab('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
+    <button class="nav-tab" id="nav-reports" onclick="showTab('reports')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Reports</button>
+    <button class="nav-tab" id="nav-notifs" onclick="showTab('notifs')" style="position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alerts</button>
+    <button class="nav-tab" id="nav-staff" onclick="showTab('staff')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff</button>
+    <button class="nav-tab" id="nav-settings" onclick="showTab('settings')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+  </div>
+</div>
+
+<!-- SCREEN 4: STAFF UPLOAD -->
+<div class="screen" id="scr-staff" style="background:var(--ink)">
+  <div class="topbar" style="background:var(--ink2);border-color:rgba(255,255,255,.07)">
+    <div class="topbar-logo" onclick="backToOwner()" style="cursor:pointer">Pay<em>tops</em></div>
+    <button onclick="backToOwner()" style="font-size:12px;color:rgba(255,255,255,.45);background:none;border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px 12px;cursor:pointer;font-family:inherit">Owner login</button>
+  </div>
+  <div id="staff-upload-view" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div class="staff-hero">
+      <div style="margin-bottom:8px;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35)" id="staff-biz-label">My Business</div>
+      <button class="staff-upload-btn"><input type="file" accept="image/*" id="file-staff" capture="environment"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+      <div class="staff-title">Take a photo to upload</div>
+      <div class="staff-sub">Point your camera at any receipt, invoice, waybill or document and tap the button above.</div>
+    </div>
+    <div style="background:var(--w);border-top:1px solid var(--line);padding:16px 18px;flex-shrink:0">
+      <div class="sec-hd" style="margin-bottom:10px"><span class="sec-title">Your recent uploads</span></div>
+      <div id="staff-recent-list"><div style="font-size:12px;color:var(--mid);text-align:center;padding:12px 0">No uploads yet this session.</div></div>
+    </div>
+  </div>
+  <div id="staff-parse-view" style="flex:1;overflow-y:auto;padding:20px 18px;display:none;background:var(--ink2)">
+    <div style="text-align:center;margin-bottom:16px"><img id="prev-staff" src="" alt="" style="max-height:160px;border-radius:10px;border:1px solid rgba(255,255,255,.08);object-fit:contain"></div>
+    <div class="steps" id="steps-staff"></div>
+  </div>
+  <div id="staff-result-view" style="flex:1;overflow-y:auto;padding:20px 18px;display:none;background:var(--ink2)">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="width:52px;height:52px;background:var(--eml);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">Document saved</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.4)" id="staff-res-type"></div>
+    </div>
+    <div style="background:var(--ink);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:16px;margin-bottom:16px"><div class="fields-g" id="fields-staff"></div></div>
+    <button class="btn btn-ind" onclick="staffUploadAnother()">Upload another document</button>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-head">
+    <div style="display:flex;align-items:center;gap:12px"><div class="drawer-av" id="d-av"></div><div><div class="drawer-name" id="d-name"></div><div class="drawer-type" id="d-type"></div></div></div>
+    <button class="close-btn" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-amt-wrap"><div class="drawer-amt-lbl">Amount</div><div class="drawer-amt-val" id="d-amt"></div></div>
+  <div class="drawer-rows" id="d-rows"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const IND={
+  school:{name:'School',docs:['Fee Slip','Receipt','Admission Form','Report Card'],stats:['Fees today','This term','Unpaid','Docs parsed'],
+    prompt:'Parse this Ghanaian school document. Return ONLY JSON: {"documentType":"string","studentName":"string","class":"string","term":"string","amountPaid":number,"balance":number,"date":"string","reference":"string"}'},
+  wholesale:{name:'Wholesaler',docs:['Supplier Invoice','Purchase Order','Delivery Receipt','Customer Receipt'],stats:['Sales today','This month','Pending orders','Docs parsed'],
+    prompt:'Parse this Ghanaian wholesale document. Return ONLY JSON: {"documentType":"string","party":"string","items":"string","totalAmount":number,"date":"string","reference":"string","isPaid":boolean}'},
+  logistics:{name:'Logistics',docs:['Waybill','Delivery Note','Loading Order','Driver Receipt'],stats:['Deliveries today','This month','In transit','Docs parsed'],
+    prompt:'Parse this Ghanaian logistics document. Return ONLY JSON: {"documentType":"string","driver":"string","origin":"string","destination":"string","goods":"string","freightCost":number,"date":"string","reference":"string"}'},
+  microfinance:{name:'Microfinance',docs:['Repayment Slip','Loan Application','Savings Deposit','Withdrawal'],stats:['Collections today','Outstanding','Overdue','Docs parsed'],
+    prompt:'Parse this Ghanaian microfinance document. Return ONLY JSON: {"documentType":"string","clientName":"string","accountNumber":"string","amount":number,"loanBalance":number,"date":"string","reference":"string","isOverdue":boolean}'},
+  pharmacy:{name:'Pharmacy',docs:['Prescription','Supplier Invoice','Sales Receipt','Stock Count'],stats:['Sales today','Stock value','Low stock','Docs parsed'],
+    prompt:'Parse this Ghanaian pharmacy document. Return ONLY JSON: {"documentType":"string","party":"string","medications":"string","totalAmount":number,"doctorName":"string","date":"string","reference":"string"}'},
+  clinic:{name:'Clinic',docs:['Patient Bill','Lab Request','Appointment Slip','Insurance Form'],stats:['Patients today','Revenue today','Unpaid bills','Docs parsed'],
+    prompt:'Parse this Ghanaian clinic document. Return ONLY JSON: {"documentType":"string","patientName":"string","services":"string","totalAmount":number,"doctorName":"string","date":"string","reference":"string","isPaid":boolean}'},
+  construction:{name:'Construction',docs:['Material Invoice','Labour Receipt','Delivery Note','Purchase Order'],stats:['Spent today','Project total','Pending','Docs parsed'],
+    prompt:'Parse this Ghanaian construction document. Return ONLY JSON: {"documentType":"string","party":"string","materials":"string","totalAmount":number,"site":"string","date":"string","reference":"string"}'},
+  general:{name:'General',docs:['Receipt','Invoice','MoMo Slip','Waybill','Any Document'],stats:['Received today','This month','Pending','Docs parsed'],
+    prompt:'Parse this Ghanaian business document. Return ONLY JSON: {"documentType":"string","party":"string","amount":number,"description":"string","date":"string","reference":"string"}'}
+};
+
+var S={ind:'general',bizName:'My Business',ownerName:'',pin:'',recs:[],notifs:[],staff:[],staffLink:'',parsed:null,parsedStaff:null,selDoc:null,activeFilter:'All',todayAmt:0,monthAmt:0,pending:0,docCount:0,obPin:'',staffUploads:[]};
+
+/* ONBOARDING */
+function pickInd(key,el){
+  document.querySelectorAll('.ind-tile').forEach(function(t){t.classList.remove('sel');});
+  el.classList.add('sel'); S.ind=key;
+  document.getElementById('ob-next1').disabled=false;
+}
+function toObS2(){
+  document.getElementById('ob-s1').style.display='none';
+  document.getElementById('ob-s2').style.display='block';
+}
+function toObS3(){
+  var biz=document.getElementById('ob-biz').value.trim();
+  if(!biz){toast('Please enter your business name');return;}
+  S.bizName=biz; S.ownerName=document.getElementById('ob-owner').value.trim()||'Owner';
+  document.getElementById('ob-s2').style.display='none';
+  document.getElementById('ob-s3').style.display='block';
+}
+function obPinKey(k){
+  if(S.obPin.length>=4)return;
+  S.obPin+=k; updateDots('ob-dots',S.obPin);
+  if(S.obPin.length===4){S.pin=S.obPin;setTimeout(launchApp,300);}
+}
+function obPinDel(){S.obPin=S.obPin.slice(0,-1);updateDots('ob-dots',S.obPin);}
+function updateDots(id,val){
+  var dots=document.getElementById(id).querySelectorAll('.pin-dot');
+  dots.forEach(function(d,i){d.classList.toggle('filled',i<val.length);d.classList.remove('error');});
+}
+
+function launchApp(){
+  var cfg=IND[S.ind];
+  S.staffLink='paytops.io/upload/'+Math.random().toString(36).substr(2,8);
+  // doc chips
+  S.selDoc=cfg.docs[0];
+  var dc=document.getElementById('doc-chips-dash');
+  dc.innerHTML=cfg.docs.map(function(d,i){return '<button class="chip'+(i===0?' on':'')+'" onclick="pickDoc(\''+d+'\',this)">'+d+'</button>';}).join('');
+  // filters
+  var fc=document.getElementById('filter-chips');
+  fc.innerHTML=['All'].concat(cfg.docs).map(function(f){return '<button class="chip'+(f==='All'?' on':'')+'" onclick="setFilter(\''+f+'\',this)">'+f+'</button>';}).join('');
+  // labels
+  cfg.stats.forEach(function(l,i){var el=document.getElementById('sl'+(i+1));if(el)el.textContent=l;});
+  document.getElementById('set-biz-name').textContent=S.bizName;
+  document.getElementById('set-industry').textContent=cfg.name;
+  document.getElementById('staff-biz-label').textContent=S.bizName;
+  document.getElementById('staff-link-text').textContent=S.staffLink;
+  document.getElementById('rec-title').textContent=cfg.name+' records';
+  document.getElementById('dz-hint-dash').textContent=cfg.docs.join(' · ');
+  renderStaff(); loadDemoRecs();
+  showScreen('scr-pin');
+  document.getElementById('pin-biz-name').textContent='Enter PIN to access '+S.bizName;
+}
+function pickDoc(d,el){
+  document.querySelectorAll('#doc-chips-dash .chip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on'); S.selDoc=d;
+}
+function goBack(step){
+  if(step===2){
+    document.getElementById('ob-s2').style.display='none';
+    document.getElementById('ob-s1').style.display='block';
+  } else if(step===3){
+    document.getElementById('ob-s3').style.display='none';
+    document.getElementById('ob-s2').style.display='block';
+    S.obPin=''; updateDots('ob-dots','');
+  }
+}
+function goBackFromPin(){
+  // If setup is complete go back to step 3, otherwise onboarding
+  if(S.pin){
+    // already set up — tapping logo on PIN screen does nothing (security)
+    toast('Enter your PIN to continue');
+  } else {
+    showScreen('scr-onboard');
+    document.getElementById('ob-s3').style.display='block';
+    document.getElementById('ob-s1').style.display='none';
+    document.getElementById('ob-s2').style.display='none';
+  }
+}
+
+/* PIN */
+var pinEntry='';
+function pinKey(k){
+  if(pinEntry.length>=4)return;
+  pinEntry+=k; updateDots('pin-dots',pinEntry);
+  if(pinEntry.length===4){
+    if(pinEntry===S.pin){pinEntry='';updateDots('pin-dots','');setTimeout(function(){showScreen('scr-dash');},200);}
+    else{
+      document.getElementById('pin-dots').querySelectorAll('.pin-dot').forEach(function(d){d.classList.remove('filled');d.classList.add('error');});
+      setTimeout(function(){pinEntry='';updateDots('pin-dots','');},600);
+      toast('Incorrect PIN');
+    }
+  }
+}
+function pinDel(){pinEntry=pinEntry.slice(0,-1);updateDots('pin-dots',pinEntry);}
+function lockDash(){showScreen('scr-pin');}
+function backToOwner(){showScreen('scr-pin');}
+
+/* FILE UPLOAD - DASHBOARD */
+document.getElementById('file-dash').addEventListener('change',function(e){
+  var file=e.target.files[0]; if(!file)return;
+  var r=new FileReader();
+  r.onload=async function(ev){
+    var b64=ev.target.result.split(',')[1];
+    document.getElementById('dz-dash').style.display='none';
+    document.getElementById('result-dash').style.display='none';
+    document.getElementById('parse-dash').style.display='block';
+    document.getElementById('prev-dash').src=ev.target.result;
+    buildSteps('steps-dash');
+    await runSteps('steps-dash');
+    try{S.parsed=await callAI(b64,file.type,IND[S.ind].prompt);}
+    catch(err){S.parsed=fallback();}
+    showResultDash();
+  };
+  r.readAsDataURL(file);
+});
+
+/* FILE UPLOAD - STAFF */
+document.getElementById('file-staff').addEventListener('change',function(e){
+  var file=e.target.files[0]; if(!file)return;
+  var r=new FileReader();
+  r.onload=async function(ev){
+    var b64=ev.target.result.split(',')[1];
+    document.getElementById('staff-upload-view').style.display='none';
+    document.getElementById('staff-parse-view').style.display='block';
+    document.getElementById('staff-result-view').style.display='none';
+    document.getElementById('prev-staff').src=ev.target.result;
+    buildSteps('steps-staff');
+    await runSteps('steps-staff');
+    try{S.parsedStaff=await callAI(b64,file.type,IND[S.ind].prompt);}
+    catch(err){S.parsedStaff=fallback();}
+    showStaffResult();
+  };
+  r.readAsDataURL(file);
+});
+
+function buildSteps(id){
+  var defs=['Detecting document type…','Reading text and numbers…','Extracting '+(S.selDoc||'document')+' fields…','Preparing your data…'];
+  document.getElementById(id).innerHTML=defs.map(function(t,i){
+    return '<div class="step-row" id="'+id+'-'+i+'"><div class="spin" id="'+id+'-sp-'+i+'"></div><span>'+t+'</span></div>';
+  }).join('');
+}
+async function runSteps(id){
+  for(var i=0;i<4;i++){
+    if(i>0){
+      var prev=document.getElementById(id+'-'+(i-1));
+      prev.classList.remove('on');prev.classList.add('done');
+      document.getElementById(id+'-sp-'+(i-1)).style.display='none';
+    }
+    var row=document.getElementById(id+'-'+i);
+    row.classList.add('on');
+    document.getElementById(id+'-sp-'+i).style.display='inline-block';
+    await sleep(900);
+  }
+  var last=document.getElementById(id+'-3');
+  last.classList.remove('on');last.classList.add('done');
+  document.getElementById(id+'-sp-3').style.display='none';
+}
+
+async function callAI(b64,mt,prompt){
+  var res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mt||'image/jpeg',data:b64}},
+      {type:'text',text:prompt}
+    ]}]})
+  });
+  var d=await res.json();
+  var t=(d.content.find(function(c){return c.type==='text';})||{}).text||'{}';
+  return JSON.parse(t.replace(/```json|```/g,'').trim());
+}
+
+function fallback(){
+  var r=function(){return Math.floor(Math.random()*9000+1000);};
+  var m={
+    school:{documentType:'Fee Slip',studentName:'Kwame Frimpong',class:'Class 6A',term:'Term 2',amountPaid:1400,balance:0,date:'Today',reference:'FS-'+r()},
+    wholesale:{documentType:'Supplier Invoice',party:'Tema Distributors',items:'Assorted beverages · 40 cartons',totalAmount:9800,date:'Today',reference:'INV-'+r(),isPaid:false},
+    logistics:{documentType:'Waybill',driver:'Yaw Asante',origin:'Accra',destination:'Kumasi',goods:'Electronics',freightCost:2800,date:'Today',reference:'WB-'+r()},
+    microfinance:{documentType:'Repayment Slip',clientName:'Abena Owusu',accountNumber:'MF-'+r(),amount:450,loanBalance:2100,date:'Today',reference:'REP-'+r()},
+    pharmacy:{documentType:'Sales Receipt',party:'Kofi Frimpong',medications:'Amoxicillin 500mg · Paracetamol',totalAmount:95,date:'Today',reference:'PH-'+r()},
+    clinic:{documentType:'Patient Bill',patientName:'Ama Boateng',services:'Consultation · Blood test',totalAmount:420,date:'Today',reference:'PT-'+r(),isPaid:true},
+    construction:{documentType:'Material Invoice',party:'Ghana Steel Co.',materials:'Iron rods · Cement bags',totalAmount:15600,site:'East Legon Project',date:'Today',reference:'MAT-'+r()},
+    general:{documentType:'MoMo Payment',party:'Kweku Mensah',amount:2200,description:'Payment for goods',date:'Today',reference:'GH-'+r()}
+  };
+  return m[S.ind]||m.general;
+}
+
+function showResultDash(){
+  var d=S.parsed;
+  document.getElementById('parse-dash').style.display='none';
+  document.getElementById('result-dash').style.display='block';
+  document.getElementById('res-type-dash').textContent=d.documentType||S.selDoc||'Document';
+  document.getElementById('fields-dash').innerHTML=buildFieldsHTML(d,false);
+  document.getElementById('dz-dash').style.display='block';
+}
+
+function showStaffResult(){
+  var d=S.parsedStaff;
+  document.getElementById('staff-parse-view').style.display='none';
+  document.getElementById('staff-result-view').style.display='block';
+  document.getElementById('staff-res-type').textContent=d.documentType||'Document';
+  document.getElementById('fields-staff').innerHTML=buildFieldsHTML(d,true);
+  autoSaveFromStaff(d);
+}
+
+function buildFieldsHTML(d,dark){
+  var fmt=function(n){return (n!=null&&n!==''&&n!==undefined)?'GHS '+Number(n).toLocaleString():'—';};
+  var bg=dark?'rgba(255,255,255,.05)':'var(--surf)';
+  var bc=dark?'rgba(255,255,255,.07)':'var(--line)';
+  var kc=dark?'rgba(255,255,255,.4)':'var(--sub)';
+  var vc=dark?'#fff':'var(--ink)';
+  var maps={
+    school:[{k:'Student',v:d.studentName||'—'},{k:'Class',v:d.class||'—'},{k:'Term',v:d.term||'—'},{k:'Amount paid',v:fmt(d.amountPaid||d.amount),m:true},{k:'Balance',v:d.balance>0?fmt(d.balance):'Fully paid',w:d.balance>0},{k:'Reference',v:d.reference||'—'}],
+    wholesale:[{k:'Party',v:d.party||'—',wide:true},{k:'Amount',v:fmt(d.totalAmount||d.amount),m:true},{k:'Status',v:d.isPaid===false?'Unpaid':'Paid',w:d.isPaid===false},{k:'Items',v:d.items||d.description||'—',wide:true},{k:'Reference',v:d.reference||'—'},{k:'Date',v:d.date||'Today'}],
+    logistics:[{k:'Driver',v:d.driver||d.party||'—'},{k:'Freight',v:fmt(d.freightCost||d.amount),m:true},{k:'From',v:d.origin||'—'},{k:'To',v:d.destination||'—'},{k:'Goods',v:d.goods||'—',wide:true},{k:'Reference',v:d.reference||'—'}],
+    microfinance:[{k:'Client',v:d.clientName||d.party||'—'},{k:'Amount',v:fmt(d.amount),m:true},{k:'Account',v:d.accountNumber||'—'},{k:'Balance',v:d.loanBalance>0?fmt(d.loanBalance):'—',w:d.loanBalance>0},{k:'Reference',v:d.reference||'—'},{k:'Date',v:d.date||'Today'}],
+    pharmacy:[{k:'Patient/Supplier',v:d.party||'—',wide:true},{k:'Amount',v:fmt(d.totalAmount||d.amount),m:true},{k:'Doctor',v:d.doctorName||'—'},{k:'Medications',v:d.medications||'—',wide:true},{k:'Reference',v:d.reference||'—'}],
+    clinic:[{k:'Patient',v:d.patientName||d.party||'—'},{k:'Total',v:fmt(d.totalAmount||d.amount),m:true},{k:'Services',v:d.services||'—',wide:true},{k:'Status',v:d.isPaid?'Paid':'Unpaid',w:!d.isPaid},{k:'Reference',v:d.reference||'—'}],
+    construction:[{k:'Supplier/Worker',v:d.party||'—',wide:true},{k:'Amount',v:fmt(d.totalAmount||d.amount),m:true},{k:'Site',v:d.site||'—'},{k:'Materials',v:d.materials||'—',wide:true},{k:'Reference',v:d.reference||'—'}],
+    general:[{k:'From/Payer',v:d.party||d.senderOrPayer||'—'},{k:'Amount',v:fmt(d.amount),m:true},{k:'Description',v:d.description||'—',wide:true},{k:'Reference',v:d.reference||'—'},{k:'Date',v:d.date||'Today'}]
+  };
+  var fields=(maps[S.ind]||maps.general);
+  return fields.map(function(f){
+    return '<div class="f-box'+(f.wide?' wide':'')+'" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">'+f.k+'</div><div class="f-val'+(f.m?' money':f.w?' warn':'')+'" style="'+((!f.m&&!f.w)?'color:'+vc:'')+'">'+(f.v||'—')+'</div></div>';
+  }).join('');
+}
+
+function autoSaveFromStaff(d){
+  var amt=getAmt(d); var name=getName(d);
+  var isIn=S.ind!=='construction'&&d.isPaid!==false;
+  var rec={name:name,sub:d.reference||d.description||d.documentType||'',amt:amt,type:d.documentType||S.selDoc||'Document',in:isIn,av:isIn?'#ECFDF5':'#FFFBEB',time:'Today '+nowTime(),detail:d};
+  S.recs.unshift(rec);
+  S.todayAmt+=amt; S.monthAmt+=amt; S.docCount++;
+  if(d.isPaid===false||d.isOverdue)S.pending++;
+  addNotif(name,amt,d.documentType||'Document',isIn);
+  S.staffUploads.unshift({name:name,type:d.documentType||'Document',time:nowTime()});
+  if(S.staffUploads.length>5)S.staffUploads.pop();
+  refreshStats(); renderRecs();
+}
+
+function staffUploadAnother(){
+  document.getElementById('staff-upload-view').style.display='flex';
+  document.getElementById('staff-parse-view').style.display='none';
+  document.getElementById('staff-result-view').style.display='none';
+  document.getElementById('file-staff').value='';
+  renderStaffRecent();
+}
+
+function saveRec(){
+  var d=S.parsed; if(!d)return;
+  var amt=getAmt(d); var name=getName(d);
+  var isIn=S.ind!=='construction'&&d.isPaid!==false;
+  S.recs.unshift({name:name,sub:d.reference||d.description||d.documentType||'',amt:amt,type:d.documentType||S.selDoc||'Document',in:isIn,av:isIn?'#ECFDF5':'#FFFBEB',time:'Today '+nowTime(),detail:d});
+  S.todayAmt+=amt; S.monthAmt+=amt; S.docCount++;
+  if(d.isPaid===false||d.isOverdue)S.pending++;
+  addNotif(name,amt,d.documentType||'Document',isIn);
+  refreshStats(); renderRecs(); resetUpload();
+  toast('Saved to dashboard');
+}
+function resetUpload(){
+  S.parsed=null;
+  document.getElementById('dz-dash').style.display='block';
+  document.getElementById('parse-dash').style.display='none';
+  document.getElementById('result-dash').style.display='none';
+  document.getElementById('file-dash').value='';
+  var dp=document.getElementById('demo-doc-preview');
+  if(dp){dp.style.display='none';dp.innerHTML='';}
+  var pi=document.getElementById('prev-dash');
+  if(pi){pi.style.display='none';pi.src='';}
+}
+var DEMO_DOCS={
+  school:{
+    svg:'<svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:10px;border:1px solid var(--line)"><rect width="280" height="180" fill="#fff"/><rect x="0" y="0" width="280" height="36" fill="#4F46E5"/><text x="140" y="14" text-anchor="middle" fill="white" font-size="9" font-weight="bold" font-family="sans-serif">BRIGHT FUTURE ACADEMY</text><text x="140" y="26" text-anchor="middle" fill="rgba(255,255,255,.7)" font-size="7" font-family="sans-serif">FEE PAYMENT RECEIPT</text><text x="20" y="56" fill="#374151" font-size="8" font-family="sans-serif">Student Name:</text><text x="110" y="56" fill="#111827" font-size="8" font-weight="bold" font-family="sans-serif">Abena Asante</text><text x="20" y="72" fill="#374151" font-size="8" font-family="sans-serif">Class:</text><text x="110" y="72" fill="#111827" font-size="8" font-family="sans-serif">Class 5B</text><text x="20" y="88" fill="#374151" font-size="8" font-family="sans-serif">Term:</text><text x="110" y="88" fill="#111827" font-size="8" font-family="sans-serif">Term 2 - 2024</text><text x="20" y="104" fill="#374151" font-size="8" font-family="sans-serif">Amount Paid:</text><text x="110" y="104" fill="#059669" font-size="9" font-weight="bold" font-family="sans-serif">GHS 1,200.00</text><text x="20" y="120" fill="#374151" font-size="8" font-family="sans-serif">Balance:</text><text x="110" y="120" fill="#111827" font-size="8" font-family="sans-serif">GHS 0.00 (Fully paid)</text><text x="20" y="136" fill="#374151" font-size="8" font-family="sans-serif">Receipt No:</text><text x="110" y="136" fill="#111827" font-size="8" font-family="sans-serif">FS-7841</text><text x="20" y="152" fill="#374151" font-size="8" font-family="sans-serif">Date:</text><text x="110" y="152" fill="#111827" font-size="8" font-family="sans-serif">12 March 2024</text><line x1="20" y1="160" x2="260" y2="160" stroke="#E5E7EB" stroke-width="1"/><text x="140" y="172" text-anchor="middle" fill="#9CA3AF" font-size="6" font-family="sans-serif">Cashier signature: _____________ Thank you for your payment</text></svg>',
+    data:{documentType:'Fee Slip',studentName:'Abena Asante',class:'Class 5B',term:'Term 2 - 2024',amountPaid:1200,balance:0,date:'12 March 2024',reference:'FS-7841'}
+  },
+  wholesale:{
+    svg:'<svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:10px;border:1px solid var(--line)"><rect width="280" height="180" fill="#fff"/><text x="20" y="22" fill="#111827" font-size="11" font-weight="bold" font-family="sans-serif">TEMA DISTRIBUTORS LTD</text><text x="20" y="34" fill="#6B7280" font-size="7" font-family="sans-serif">North Industrial Area, Tema · 0302-123456</text><rect x="0" y="42" width="280" height="1" fill="#E5E7EB"/><text x="20" y="56" fill="#4F46E5" font-size="8" font-weight="bold" font-family="sans-serif">SUPPLIER INVOICE</text><text x="200" y="56" fill="#374151" font-size="7" font-family="sans-serif">INV-2041</text><text x="20" y="70" fill="#374151" font-size="7" font-family="sans-serif">Bill To: Mensah Wholesale Ltd</text><text x="20" y="82" fill="#374151" font-size="7" font-family="sans-serif">Date: 15 March 2024</text><rect x="20" y="90" width="240" height="14" fill="#F3F4F6" rx="2"/><text x="25" y="100" fill="#374151" font-size="7" font-weight="bold" font-family="sans-serif">Item</text><text x="180" y="100" fill="#374151" font-size="7" font-weight="bold" font-family="sans-serif">Qty</text><text x="220" y="100" fill="#374151" font-size="7" font-weight="bold" font-family="sans-serif">Amount</text><text x="25" y="116" fill="#111827" font-size="7" font-family="sans-serif">Assorted Beverages (Malta, Voltic)</text><text x="180" y="116" fill="#111827" font-size="7" font-family="sans-serif">50 ctn</text><text x="220" y="116" fill="#111827" font-size="7" font-family="sans-serif">GHS 8,400</text><line x1="20" y1="124" x2="260" y2="124" stroke="#E5E7EB" stroke-width="1"/><text x="180" y="138" fill="#374151" font-size="8" font-weight="bold" font-family="sans-serif">TOTAL:</text><text x="220" y="138" fill="#059669" font-size="9" font-weight="bold" font-family="sans-serif">GHS 9,800</text><text x="20" y="155" fill="#DC2626" font-size="8" font-weight="bold" font-family="sans-serif">STATUS: UNPAID</text><text x="20" y="168" fill="#9CA3AF" font-size="6" font-family="sans-serif">Payment due within 30 days · Thank you for your business</text></svg>',
+    data:{documentType:'Supplier Invoice',party:'Tema Distributors Ltd',items:'Assorted Beverages · 50 cartons',totalAmount:9800,isPaid:false,date:'15 March 2024',reference:'INV-2041'}
+  },
+  logistics:{
+    svg:'<svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:10px;border:1px solid var(--line)"><rect width="280" height="180" fill="#fff"/><rect x="0" y="0" width="280" height="30" fill="#111827"/><text x="140" y="12" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">ACCRA EXPRESS LOGISTICS</text><text x="140" y="23" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="7" font-family="sans-serif">WAYBILL / DELIVERY NOTE</text><text x="20" y="46" fill="#374151" font-size="7" font-family="sans-serif">Waybill No:</text><text x="90" y="46" fill="#111827" font-size="7" font-weight="bold" font-family="sans-serif">WB-5541</text><text x="160" y="46" fill="#374151" font-size="7" font-family="sans-serif">Date:</text><text x="185" y="46" fill="#111827" font-size="7" font-family="sans-serif">15 Mar 2024</text><text x="20" y="60" fill="#374151" font-size="7" font-family="sans-serif">Driver:</text><text x="90" y="60" fill="#111827" font-size="7" font-family="sans-serif">Yaw Mensah</text><text x="20" y="74" fill="#374151" font-size="7" font-family="sans-serif">Vehicle:</text><text x="90" y="74" fill="#111827" font-size="7" font-family="sans-serif">GR-1234-20</text><line x1="20" y1="82" x2="260" y2="82" stroke="#E5E7EB" stroke-width="1"/><text x="20" y="96" fill="#374151" font-size="7" font-family="sans-serif">From:</text><text x="60" y="96" fill="#4F46E5" font-size="8" font-weight="bold" font-family="sans-serif">Accra (Spintex)</text><text x="160" y="96" fill="#374151" font-size="7" font-family="sans-serif">To:</text><text x="180" y="96" fill="#4F46E5" font-size="8" font-weight="bold" font-family="sans-serif">Kumasi</text><text x="20" y="112" fill="#374151" font-size="7" font-family="sans-serif">Goods:</text><text x="60" y="112" fill="#111827" font-size="7" font-family="sans-serif">Electronics · 2.5 tons</text><text x="20" y="128" fill="#374151" font-size="7" font-family="sans-serif">Freight Cost:</text><text x="90" y="128" fill="#059669" font-size="9" font-weight="bold" font-family="sans-serif">GHS 3,200</text><line x1="20" y1="140" x2="260" y2="140" stroke="#E5E7EB" stroke-width="1"/><text x="20" y="154" fill="#374151" font-size="7" font-family="sans-serif">Sender sign: ______________</text><text x="160" y="154" fill="#374151" font-size="7" font-family="sans-serif">Receiver sign: ______________</text></svg>',
+    data:{documentType:'Waybill',driver:'Yaw Mensah',origin:'Accra (Spintex)',destination:'Kumasi',goods:'Electronics · 2.5 tons',freightCost:3200,date:'15 March 2024',reference:'WB-5541'}
+  },
+  general:{
+    svg:'<svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:10px;border:1px solid var(--line)"><rect width="280" height="180" fill="#fff"/><rect x="20" y="10" width="240" height="50" fill="#F9FAFB" rx="6" stroke="#E5E7EB" stroke-width="1"/><text x="140" y="27" text-anchor="middle" fill="#374151" font-size="7" font-family="sans-serif">MTN Mobile Money</text><text x="140" y="40" text-anchor="middle" fill="#111827" font-size="9" font-weight="bold" font-family="sans-serif">Transaction Confirmed</text><text x="140" y="52" text-anchor="middle" fill="#6B7280" font-size="7" font-family="sans-serif">Ref: GH-7823-XY · 14 Mar 2024 08:14</text><text x="20" y="82" fill="#374151" font-size="8" font-family="sans-serif">From:</text><text x="70" y="82" fill="#111827" font-size="8" font-weight="bold" font-family="sans-serif">Kofi Mensah (0244-XXX-XXX)</text><text x="20" y="98" fill="#374151" font-size="8" font-family="sans-serif">Amount:</text><text x="70" y="98" fill="#059669" font-size="10" font-weight="bold" font-family="sans-serif">GHS 2,200.00</text><text x="20" y="114" fill="#374151" font-size="8" font-family="sans-serif">To:</text><text x="70" y="114" fill="#111827" font-size="8" font-family="sans-serif">Mensah Wholesale (0302-XXX-XXX)</text><text x="20" y="130" fill="#374151" font-size="8" font-family="sans-serif">Reason:</text><text x="70" y="130" fill="#111827" font-size="8" font-family="sans-serif">Payment for goods</text><text x="20" y="146" fill="#374151" font-size="8" font-family="sans-serif">Balance:</text><text x="70" y="146" fill="#111827" font-size="8" font-family="sans-serif">GHS 4,821.50</text><line x1="20" y1="156" x2="260" y2="156" stroke="#E5E7EB" stroke-width="1"/><text x="140" y="168" text-anchor="middle" fill="#9CA3AF" font-size="6" font-family="sans-serif">This is an automated transaction confirmation from MTN MoMo</text></svg>',
+    data:{documentType:'MoMo Payment',party:'Kofi Mensah',amount:2200,description:'Payment for goods',date:'14 March 2024',reference:'GH-7823-XY'}
+  }
+};
+
+async function runDemo(){
+  // pick demo doc closest to current industry
+  var key=DEMO_DOCS[S.ind]?S.ind:'general';
+  var demo=DEMO_DOCS[key]||DEMO_DOCS.general;
+  S.selDoc=IND[S.ind].docs[0];
+
+  // show parsing area
+  document.getElementById('dz-dash').style.display='none';
+  document.getElementById('result-dash').style.display='none';
+  document.getElementById('parse-dash').style.display='block';
+
+  // show SVG doc preview instead of real image
+  var prevImg=document.getElementById('prev-dash');
+  var demoPreview=document.getElementById('demo-doc-preview');
+  prevImg.style.display='none';
+  demoPreview.style.display='block';
+  demoPreview.innerHTML=demo.svg;
+
+  // run steps animation
+  buildSteps('steps-dash');
+  await runSteps('steps-dash');
+
+  // use demo data directly — no API call needed
+  S.parsed=Object.assign({},demo.data);
+  showResultDash();
+  toast('Demo document parsed');
+}
+function getAmt(d){return d.amountPaid||d.totalAmount||d.freightCost||d.amount||0;}
+function getName(d){return d.studentName||d.clientName||d.patientName||d.driver||d.party||d.senderOrPayer||'Unknown';}
+function nowTime(){return new Date().toLocaleTimeString('en-GH',{hour:'2-digit',minute:'2-digit'});}
+
+/* NOTIFICATIONS */
+function addNotif(name,amt,type,isIn){
+  S.notifs.unshift({title:(isIn?'Payment received — ':'Document uploaded — ')+name,sub:type+' · GHS '+Number(amt).toLocaleString(),time:nowTime(),unread:true,isIn:isIn});
+  renderNotifs(); updateNotifBadge();
+}
+function renderNotifs(){
+  var el=document.getElementById('notif-list');
+  if(!S.notifs.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><p>No notifications yet.</p></div>';return;}
+  el.innerHTML=S.notifs.map(function(n){
+    return '<div class="notif-item"><div class="notif-dot-wrap" style="background:'+(n.isIn?'var(--eml)':'var(--aml)')+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(n.isIn?'#059669':'#B45309')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="flex:1"><div class="notif-title">'+n.title+'</div><div class="notif-sub">'+n.sub+'</div><div class="notif-time">'+n.time+'</div></div>'+(n.unread?'<div class="unread-dot"></div>':'')+'</div>';
+  }).join('');
+}
+function updateNotifBadge(){
+  var b=document.getElementById('notif-badge');
+  var u=S.notifs.filter(function(n){return n.unread;}).length;
+  b.style.display=u>0?'block':'none';
+}
+function clearNotifs(){S.notifs=[];renderNotifs();updateNotifBadge();toast('Notifications cleared');}
+
+/* RECORDS */
+function loadDemoRecs(){
+  var demos={
+    school:[
+      {name:'Abena Asante',sub:'Class 5 · Term 2',amt:1200,type:'Fee Slip',in:true,av:'#EEF2FF',time:'Today 08:15',detail:{documentType:'Fee Slip',studentName:'Abena Asante',class:'Class 5',term:'Term 2',amountPaid:1200,balance:0,date:'Today',reference:'FS-7841'}},
+      {name:'Kwame Boateng',sub:'Class 3 · Term 2 · Balance GHS 300',amt:950,type:'Receipt',in:true,av:'#ECFDF5',time:'Today 09:40',detail:{documentType:'Receipt',studentName:'Kwame Boateng',class:'Class 3',term:'Term 2',amountPaid:950,balance:300,date:'Today',reference:'RC-2211'}},
+      {name:'Ama Owusu',sub:'JHS 1 · Term 2',amt:1500,type:'Fee Slip',in:true,av:'#EEF2FF',time:'Yesterday',detail:{documentType:'Fee Slip',studentName:'Ama Owusu',class:'JHS 1',term:'Term 2',amountPaid:1500,balance:0,date:'Yesterday',reference:'FS-6632'}}
+    ],
+    wholesale:[
+      {name:'Tema Distributors',sub:'INV-2041 · 50 cartons',amt:8400,type:'Supplier Invoice',in:false,av:'#FFFBEB',time:'Today 07:30',detail:{documentType:'Supplier Invoice',party:'Tema Distributors',items:'Assorted beverages · 50 cartons',totalAmount:8400,isPaid:false,date:'Today',reference:'INV-2041'}},
+      {name:'Palace Retail Ltd',sub:'ORD-112 · Mixed goods',amt:15200,type:'Purchase Order',in:true,av:'#EEF2FF',time:'Today 10:00',detail:{documentType:'Purchase Order',party:'Palace Retail Ltd',items:'Mixed goods',totalAmount:15200,isPaid:true,date:'Today',reference:'ORD-112'}},
+      {name:'Accra Supermart',sub:'RCP-088 · Beverages',amt:6700,type:'Customer Receipt',in:true,av:'#ECFDF5',time:'Yesterday',detail:{documentType:'Customer Receipt',party:'Accra Supermart',items:'Beverages',totalAmount:6700,isPaid:true,date:'Yesterday',reference:'RCP-088'}}
+    ],
+    logistics:[
+      {name:'Yaw Mensah',sub:'Accra → Kumasi · 2.5t',amt:3200,type:'Waybill',in:true,av:'#EEF2FF',time:'Today 06:00',detail:{documentType:'Waybill',driver:'Yaw Mensah',origin:'Accra',destination:'Kumasi',goods:'Electronics',freightCost:3200,date:'Today',reference:'WB-5541'}},
+      {name:'Kofi Adu',sub:'Tema Port → Spintex',amt:1800,type:'Delivery Note',in:true,av:'#ECFDF5',time:'Today 09:15',detail:{documentType:'Delivery Note',driver:'Kofi Adu',origin:'Tema Port',destination:'Spintex',goods:'Electronics',freightCost:1800,date:'Today',reference:'DN-3312'}},
+      {name:'Ama Serwaa',sub:'Suame → Takoradi',amt:2500,type:'Waybill',in:true,av:'#EEF2FF',time:'Yesterday',detail:{documentType:'Waybill',driver:'Ama Serwaa',origin:'Suame',destination:'Takoradi',goods:'Spare parts',freightCost:2500,date:'Yesterday',reference:'WB-4422'}}
+    ],
+    general:[
+      {name:'Kofi Mensah',sub:'MoMo · GH-7823',amt:1200,type:'MoMo Payment',in:true,av:'#EEF2FF',time:'Today 08:14',detail:{documentType:'MoMo Payment',party:'Kofi Mensah',amount:1200,description:'Payment for goods',date:'Today',reference:'GH-7823'}},
+      {name:'Akosua Trading',sub:'INV-0041 · Goods',amt:3500,type:'Invoice',in:false,av:'#FFFBEB',time:'Today 09:30',detail:{documentType:'Invoice',party:'Akosua Trading',amount:3500,description:'Goods supplied',isPaid:false,date:'Today',reference:'INV-0041'}},
+      {name:'Ama Owusu',sub:'RCP-112',amt:800,type:'Receipt',in:true,av:'#ECFDF5',time:'Yesterday',detail:{documentType:'Receipt',party:'Ama Owusu',amount:800,description:'Payment received',date:'Yesterday',reference:'RCP-112'}}
+    ]
+  };
+  var recs=demos[S.ind]||demos.general;
+  recs.forEach(function(r){S.recs.push(r);S.monthAmt+=r.amt;if(r.in&&r.time.indexOf('Today')>-1)S.todayAmt+=r.amt;S.docCount++;});
+  S.pending=S.recs.filter(function(r){return !r.in;}).length;
+  refreshStats(); renderRecs();
+}
+
+function refreshStats(){
+  var tr=S.recs.filter(function(r){return r.time.indexOf('Today')>-1;});
+  document.getElementById('sv1').textContent='GHS '+S.todayAmt.toLocaleString();
+  document.getElementById('ss1').textContent=tr.length+' payments';
+  document.getElementById('sv2').textContent='GHS '+S.monthAmt.toLocaleString();
+  document.getElementById('ss2').textContent=S.recs.length+' total';
+  document.getElementById('sv3').textContent=S.pending;
+  document.getElementById('sv4').textContent=S.docCount;
+  document.getElementById('rpt-today').textContent='GHS '+S.todayAmt.toLocaleString();
+  document.getElementById('rpt-today-sub').textContent=tr.length+' transactions today';
+  document.getElementById('rpt-month').textContent='GHS '+S.monthAmt.toLocaleString();
+  document.getElementById('rpt-month-sub').textContent=S.recs.length+' records this month';
+  document.getElementById('rpt-parsed').textContent=S.docCount;
+  document.getElementById('rpt-pending').textContent=S.pending;
+  buildBarChart();
+}
+function buildBarChart(){
+  var days=['Mon','Tue','Wed','Thu','Fri','Sat','Today'];
+  var vals=[4200,6800,3100,9400,7200,5500,S.todayAmt||2800];
+  var max=Math.max.apply(null,vals);
+  document.getElementById('bar-chart').innerHTML=vals.map(function(v,i){return '<div class="bar'+(i===6?' today':'')+'" style="height:'+Math.max(4,Math.round(v/max*56))+'px"></div>';}).join('');
+  document.getElementById('bar-labels').innerHTML=days.map(function(d){return '<div class="bar-lbl">'+d+'</div>';}).join('');
+}
+function setFilter(f,el){
+  document.querySelectorAll('#filter-chips .chip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on'); S.activeFilter=f; renderRecs();
+}
+function renderRecs(){
+  var list=document.getElementById('rec-list');
+  var q=document.getElementById('search-input').value.toLowerCase();
+  var data=S.activeFilter==='All'?S.recs.slice():S.recs.filter(function(r){return r.type===S.activeFilter;});
+  if(q)data=data.filter(function(r){return r.name.toLowerCase().indexOf(q)>-1||r.sub.toLowerCase().indexOf(q)>-1||String(r.amt).indexOf(q)>-1||r.type.toLowerCase().indexOf(q)>-1;});
+  if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>No records found.</p></div>';return;}
+  list.innerHTML=data.map(function(r){
+    var idx=S.recs.indexOf(r);
+    var pc=r.in?{bg:'#ECFDF5',c:'#059669'}:{bg:'#FFFBEB',c:'#B45309'};
+    return '<div class="rec-row" onclick="openDrawer('+idx+')"><div class="rec-l"><div class="rec-av" style="background:'+r.av+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(r.in?'#059669':'#B45309')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="rec-name">'+r.name+'</div><div class="rec-sub">'+r.sub+'</div></div></div><div class="rec-r"><div class="rec-amt '+(r.in?'cr':'dr')+'">'+(r.in?'+':'')+'GHS '+r.amt.toLocaleString()+'</div><div class="rec-time">'+r.time+'</div><span class="type-pill" style="background:'+pc.bg+';color:'+pc.c+'">'+r.type+'</span></div><span class="chev">›</span></div>';
+  }).join('');
+}
+
+/* DRAWER */
+function openDrawer(idx){
+  var r=S.recs[idx]; if(!r)return;
+  var d=r.detail||{};
+  document.getElementById('d-av').style.background=r.av;
+  document.getElementById('d-av').innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+(r.in?'#059669':'#B45309')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  document.getElementById('d-name').textContent=r.name;
+  document.getElementById('d-type').textContent=r.type+' · '+r.time;
+  var ae=document.getElementById('d-amt');
+  ae.textContent=(r.in?'+':'')+'GHS '+r.amt.toLocaleString();
+  ae.className='drawer-amt-val'+(r.in?'':' dr');
+  var fmt=function(n){return(n!=null&&n!==''&&n!==undefined)?'GHS '+Number(n).toLocaleString():'—';};
+  var maps={
+    school:[['Student',d.studentName],['Class',d.class],['Term',d.term],['Amount paid',fmt(d.amountPaid||d.amount),'ok'],['Balance',d.balance>0?fmt(d.balance):'Fully paid',d.balance>0?'warn':'ok'],['Reference',d.reference],['Date',d.date]],
+    wholesale:[['Supplier/Customer',d.party],['Total amount',fmt(d.totalAmount||d.amount),'ok'],['Items',d.items||d.description],['Status',d.isPaid===false?'Unpaid':'Paid',d.isPaid===false?'warn':'ok'],['Reference',d.reference],['Date',d.date]],
+    logistics:[['Driver',d.driver||d.party],['Freight',fmt(d.freightCost||d.amount),'ok'],['From',d.origin],['To',d.destination],['Goods',d.goods],['Reference',d.reference]],
+    microfinance:[['Client',d.clientName||d.party],['Amount',fmt(d.amount),'ok'],['Account',d.accountNumber],['Balance',d.loanBalance>0?fmt(d.loanBalance):'—',d.loanBalance>0?'warn':''],['Reference',d.reference],['Date',d.date]],
+    pharmacy:[['Patient/Supplier',d.party],['Total',fmt(d.totalAmount||d.amount),'ok'],['Medications',d.medications],['Doctor',d.doctorName],['Reference',d.reference]],
+    clinic:[['Patient',d.patientName||d.party],['Total bill',fmt(d.totalAmount||d.amount),'ok'],['Services',d.services],['Status',d.isPaid?'Paid':'Unpaid',d.isPaid?'ok':'warn'],['Reference',d.reference]],
+    construction:[['Supplier/Worker',d.party],['Amount',fmt(d.totalAmount||d.amount),'ok'],['Materials',d.materials],['Site',d.site],['Reference',d.reference]],
+    general:[['From/Payer',d.party||d.senderOrPayer],['Amount',fmt(d.amount),'ok'],['Description',d.description],['Reference',d.reference],['Date',d.date]]
+  };
+  var rows=(maps[S.ind]||maps.general).filter(function(x){return x[1]&&x[1]!=='—'&&x[1]!==undefined;});
+  document.getElementById('d-rows').innerHTML=rows.map(function(x){return '<div class="d-row"><span class="d-key">'+x[0]+'</span><span class="d-val'+(x[2]?' '+x[2]:'')+'">'+(x[1]||'—')+'</span></div>';}).join('');
+  document.getElementById('overlay').classList.add('on');
+  document.getElementById('drawer').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('drawer').classList.remove('on');
+  document.body.style.overflow='';
+}
+
+/* STAFF */
+function renderStaff(){
+  var list=document.getElementById('staff-list');
+  if(!S.staff.length){list.innerHTML='<div style="font-size:13px;color:var(--mid);padding:16px 0;text-align:center">No staff added yet. Share the upload link with your staff.</div>';return;}
+  list.innerHTML=S.staff.map(function(s,i){
+    var ini=s.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    return '<div class="staff-item"><div style="display:flex;align-items:center;gap:10px"><div class="staff-av">'+ini+'</div><div><div class="staff-name">'+s.name+'</div><div class="staff-role">'+s.role+'</div></div></div><button class="btn btn-danger btn-sm" onclick="removeStaff('+i+')">Remove</button></div>';
+  }).join('');
+}
+function addStaff(){
+  var name=prompt('Staff member name:'); if(!name)return;
+  S.staff.push({name:name.trim(),role:'Upload only'}); renderStaff(); toast('Staff member added');
+}
+function removeStaff(i){S.staff.splice(i,1);renderStaff();toast('Access removed');}
+function copyLink(){try{navigator.clipboard.writeText('https://'+S.staffLink);}catch(e){}toast('Link copied!');}
+function regenLink(){S.staffLink='paytops.io/upload/'+Math.random().toString(36).substr(2,8);document.getElementById('staff-link-text').textContent=S.staffLink;toast('New link generated');}
+
+function renderStaffRecent(){
+  var el=document.getElementById('staff-recent-list');
+  if(!S.staffUploads.length){el.innerHTML='<div style="font-size:12px;color:var(--mid);text-align:center;padding:12px 0">No uploads yet this session.</div>';return;}
+  el.innerHTML=S.staffUploads.map(function(u){return '<div class="staff-rec-item"><div class="staff-rec-dot"></div><div class="staff-rec-name">'+u.name+' · '+u.type+'</div><div class="staff-rec-time">'+u.time+'</div></div>';}).join('');
+}
+
+/* EXPORT */
+function exportCSV(){
+  if(!S.recs.length){toast('No records to export');return;}
+  var rows=[['Name','Amount (GHS)','Type','Details','Time']];
+  S.recs.forEach(function(r){rows.push([r.name,r.amt,r.type,r.sub,r.time]);});
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+c+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='paytops-'+S.ind+'-records.csv'; a.click();
+  toast('Exported successfully');
+}
+
+/* SETTINGS */
+function changePIN(){
+  var np=prompt('Enter new 4-digit PIN:');
+  if(!np||np.length!==4||!/^\d+$/.test(np)){toast('PIN must be exactly 4 digits');return;}
+  S.pin=np; toast('PIN updated');
+}
+function editBiz(){
+  var name=prompt('Business name:',S.bizName); if(!name)return;
+  S.bizName=name.trim();
+  document.getElementById('set-biz-name').textContent=S.bizName;
+  document.getElementById('staff-biz-label').textContent=S.bizName;
+  toast('Business name updated');
+}
+function resetApp(){if(!confirm('Reset all data and start over?'))return;location.reload();}
+
+/* NAV */
+function showTab(tab){
+  ['home','reports','notifs','staff','settings'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
+    var n=document.getElementById('nav-'+t);
+    if(n)n.classList.toggle('active',t===tab);
+  });
+  if(tab==='notifs'){S.notifs.forEach(function(n){n.unread=false;});updateNotifBadge();}
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+}
+function switchToStaff(){
+  renderStaffRecent();
+  document.getElementById('staff-upload-view').style.display='flex';
+  document.getElementById('staff-parse-view').style.display='none';
+  document.getElementById('staff-result-view').style.display='none';
+  showScreen('scr-staff');
+}
+
+/* UTILS */
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2800);
+}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+</script>
+</body>
+</html>
