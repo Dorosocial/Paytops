@@ -617,7 +617,7 @@ async function runSteps(id){
 }
 
 async function callAI(b64,mt,prompt){
-  var res=await fetch('https://api.anthropic.com/v1/messages',{
+  var res=await fetch('https://paytops-ai.socialmoa95.workers.dev/',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[
       {type:'image',source:{type:'base64',media_type:mt||'image/jpeg',data:b64}},
