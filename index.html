@@ -639,20 +639,34 @@ async function compressImage(b64,mt){
 
 async function callAI(b64,mt,prompt){
   var compressed=await compressImage(b64,mt);
-  console.log('Sending to Worker, compressed size:',compressed.length);
+  console.log('Compressed image size:',compressed.length,'chars');
+  var payload={
+    model:'claude-sonnet-4-6',
+    max_tokens:800,
+    messages:[{
+      role:'user',
+      content:[
+        {type:'image',source:{type:'base64',media_type:'image/jpeg',data:compressed}},
+        {type:'text',text:prompt}
+      ]
+    }]
+  };
   var res=await fetch('https://paytops-ai.socialmoa95.workers.dev/',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[
-      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:compressed}},
-      {type:'text',text:prompt}
-    ]}]})
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
   });
-  console.log('Worker response status:',res.status);
+  console.log('Worker status:',res.status);
   var d=await res.json();
-  console.log('Worker response:',JSON.stringify(d).slice(0,200));
-  if(d.error){throw new Error(d.error+': '+(d.message||d.raw||''));}
+  console.log('Worker response:',JSON.stringify(d).slice(0,300));
+  if(d.error){
+    var msg=typeof d.error==='object'?JSON.stringify(d.error):String(d.error);
+    throw new Error(msg+(d.message?' — '+d.message:'')+(d.raw?' — '+d.raw:''));
+  }
+  if(!d.content){throw new Error('No content in response: '+JSON.stringify(d).slice(0,200));}
   var t=(d.content.find(function(c){return c.type==='text';})||{}).text||'{}';
-  return JSON.parse(t.replace(/```json|```/g,'').trim());
+  var clean=t.replace(/```json|```/g,'').trim();
+  return JSON.parse(clean);
 }
 
 function fallback(){
