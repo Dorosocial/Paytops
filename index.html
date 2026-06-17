@@ -306,9 +306,9 @@ body{font-family:'Inter',sans-serif;background:var(--surf);color:var(--ink);-web
   <!-- HOME TAB -->
   <div class="scroll-body" id="tab-home">
     <div class="stats-grid">
-      <div class="stat-box dark"><div class="s-lbl" id="sl1">Today</div><div class="s-val em" id="sv1">0</div><div class="s-sub" id="ss1">documents</div></div>
-      <div class="stat-box"><div class="s-lbl">Total records</div><div class="s-val am" id="sv2">0</div><div class="s-sub" id="ss2">all time</div></div>
-      <div class="stat-box"><div class="s-lbl">Pending</div><div class="s-val" id="sv3">0</div><div class="s-sub">unpaid/pending</div></div>
+      <div class="stat-box dark"><div class="s-lbl" id="sl1">Money in today</div><div class="s-val em" id="sv1">GHS 0</div><div class="s-sub" id="ss1">0 receipts</div></div>
+      <div class="stat-box"><div class="s-lbl">Money out today</div><div class="s-val am" id="sv2">GHS 0</div><div class="s-sub" id="ss2">0 payments</div></div>
+      <div class="stat-box"><div class="s-lbl">Unpaid / pending</div><div class="s-val" id="sv3">0</div><div class="s-sub">items flagged</div></div>
       <div class="stat-box"><div class="s-lbl">Docs parsed</div><div class="s-val" id="sv4">0</div><div class="s-sub">by Paytops AI</div></div>
     </div>
     <div class="card" style="margin-bottom:12px">
@@ -439,25 +439,22 @@ body{font-family:'Inter',sans-serif;background:var(--surf);color:var(--ink);-web
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const DYNAMIC_PROMPT=`You are a document parser for Ghanaian businesses. Look at this document carefully and extract ALL information visible on it.
+const DYNAMIC_PROMPT=`You are a document parser for Ghanaian businesses. Read this document carefully and extract ALL information on it.
 
-Return ONLY a JSON object with these exact fields:
+Return ONLY a JSON object:
 {
-  "documentType": "exact type of document e.g. Waybill, Sales Receipt, Supplier Invoice, Fee Payment Slip, MoMo Transfer, Delivery Note, Purchase Order, Prescription, Patient Bill, etc.",
-  "primaryName": "the most important person or company name on this document",
-  "primaryAmount": a number representing the main monetary amount (digits only, no currency symbol),
-  "date": "the date on the document",
-  "reference": "any reference number, receipt number, invoice number, waybill number etc.",
-  "status": "Paid, Unpaid, Pending, Delivered, or null if not applicable",
+  "documentType": "exact document type e.g. Sales Receipt, Supplier Invoice, Waybill, Fee Payment Slip, MoMo Transfer, Delivery Note, Purchase Order, Prescription, Patient Bill, Loan Repayment etc.",
+  "primaryName": "the name of the CUSTOMER, CLIENT, PAYER, STUDENT, PATIENT, DRIVER, or RECIPIENT — NOT the business or shop name that issued the document. If a receipt is FROM Delpaine Trading Co. TO a customer, the primaryName is the CUSTOMER. If no customer name exists, use the counterparty name.",
+  "primaryAmount": the main monetary amount as a number only (no currency symbol),
+  "date": "date on document",
+  "reference": "receipt number, invoice number, waybill number, or any reference code",
+  "status": "Paid, Unpaid, Pending, Delivered — or null if not shown",
   "fields": {
-    "key1": "value1",
-    "key2": "value2"
+    "include every field visible on the document as readable key-value pairs. Examples: Customer Name, Seller, Items Purchased, Unit Price, Quantity, Total, Discount, Change Given, Phone Number, Address, Driver, Vehicle Number, Origin, Destination, Goods Description, Weight, Student Name, Class, Term, Balance, Doctor, Medications, Account Number, Loan Balance — whatever is on THIS specific document"
   }
 }
 
-For the "fields" object: extract EVERY piece of information visible on the document as key-value pairs. Use natural, readable key names. Include everything — names, addresses, phone numbers, items, quantities, prices, vehicle numbers, driver names, destinations, student names, classes, medications, doctors, balances, signatures, stamps, anything readable. Do not skip any field. If a value is a number or amount, include the currency if shown.
-
-Return ONLY the JSON. No explanation. No markdown.`;
+Return ONLY valid JSON. No markdown. No explanation.`;
 
 const IND={
   school:{name:'School',docs:['Fee Slip','Receipt','Admission Form','Report Card'],stats:['Docs today','This term','Unpaid','Docs parsed']},
@@ -888,32 +885,56 @@ function loadDemoRecs(){
     ]
   };
   var recs=demos[S.ind]||demos.general;
-  recs.forEach(function(r){S.recs.push(r);S.monthAmt+=r.amt;if(r.in&&r.time.indexOf('Today')>-1)S.todayAmt+=r.amt;S.docCount++;});
-  S.pending=S.recs.filter(function(r){return !r.in;}).length;
+  recs.forEach(function(r){S.recs.push(r);S.docCount++;});
+  S.pending=S.recs.filter(function(r){return r.status==='Unpaid'||r.status==='Pending';}).length;
   refreshStats(); renderRecs();
 }
 
+function classifyDoc(d){
+  var type=(d.documentType||'').toLowerCase();
+  var status=(d.status||'').toLowerCase();
+  var inTypes=['receipt','payment','momo','fee slip','customer receipt','repayment','savings deposit','sales receipt','patient bill'];
+  var outTypes=['supplier invoice','purchase order','material invoice','labour receipt'];
+  var isIn=inTypes.some(function(t){return type.indexOf(t)>-1;});
+  var isOut=outTypes.some(function(t){return type.indexOf(t)>-1;});
+  if(isIn)return 'in';
+  if(isOut)return 'out';
+  if(status==='paid')return 'in';
+  if(status==='unpaid')return 'out';
+  return 'in'; // default to in
+}
+
 function refreshStats(){
-  var tr=S.recs.filter(function(r){return r.time.indexOf('Today')>-1;});
-  var todayDocs=tr.length;
-  document.getElementById('sv1').textContent=todayDocs;
-  document.getElementById('ss1').textContent='documents today';
-  document.getElementById('sv2').textContent=S.recs.length;
-  document.getElementById('ss2').textContent='total records';
+  var todayRecs=S.recs.filter(function(r){return r.time.indexOf('Today')>-1;});
+  var moneyIn=0;var moneyInCount=0;
+  var moneyOut=0;var moneyOutCount=0;
+  todayRecs.forEach(function(r){
+    var cls=classifyDoc(r.detail||{documentType:r.type});
+    if(cls==='in'){moneyIn+=(r.amt||0);moneyInCount++;}
+    else{moneyOut+=(r.amt||0);moneyOutCount++;}
+  });
+  document.getElementById('sv1').textContent='GHS '+moneyIn.toLocaleString();
+  document.getElementById('ss1').textContent=moneyInCount+' received';
+  document.getElementById('sv2').textContent='GHS '+moneyOut.toLocaleString();
+  document.getElementById('ss2').textContent=moneyOutCount+' paid out';
   document.getElementById('sv3').textContent=S.pending;
   document.getElementById('sv4').textContent=S.docCount;
-  document.getElementById('rpt-today').textContent=todayDocs;
-  document.getElementById('rpt-today-sub').textContent='documents uploaded today';
-  document.getElementById('rpt-month').textContent=S.recs.length;
-  document.getElementById('rpt-month-sub').textContent='total records this session';
+  var allIn=S.recs.filter(function(r){return classifyDoc(r.detail||{documentType:r.type})==='in';});
+  var totalIn=allIn.reduce(function(s,r){return s+(r.amt||0);},0);
+  var allOut=S.recs.filter(function(r){return classifyDoc(r.detail||{documentType:r.type})==='out';});
+  var totalOut=allOut.reduce(function(s,r){return s+(r.amt||0);},0);
+  document.getElementById('rpt-today').textContent='GHS '+moneyIn.toLocaleString();
+  document.getElementById('rpt-today-sub').textContent='received · GHS '+moneyOut.toLocaleString()+' paid out today';
+  document.getElementById('rpt-month').textContent='GHS '+totalIn.toLocaleString();
+  document.getElementById('rpt-month-sub').textContent='total in · GHS '+totalOut.toLocaleString()+' total out';
   document.getElementById('rpt-parsed').textContent=S.docCount;
   document.getElementById('rpt-pending').textContent=S.pending;
-  buildBarChart();
+  buildBarChart(moneyIn);
 }
-function buildBarChart(){
+function buildBarChart(todayVal){
   var days=['Mon','Tue','Wed','Thu','Fri','Sat','Today'];
-  var vals=[4200,6800,3100,9400,7200,5500,S.todayAmt||2800];
-  var max=Math.max.apply(null,vals);
+  var vals=[4200,6800,3100,9400,7200,5500,todayVal||0];
+  var max=Math.max.apply(null,vals)||1;
   document.getElementById('bar-chart').innerHTML=vals.map(function(v,i){return '<div class="bar'+(i===6?' today':'')+'" style="height:'+Math.max(4,Math.round(v/max*56))+'px"></div>';}).join('');
   document.getElementById('bar-labels').innerHTML=days.map(function(d){return '<div class="bar-lbl">'+d+'</div>';}).join('');
 }
@@ -930,7 +951,8 @@ function renderRecs(){
   list.innerHTML=data.map(function(r){
     var idx=S.recs.indexOf(r);
     var amtDisplay=r.amt&&r.amt>0?'GHS '+Number(r.amt).toLocaleString():'—';
-    return '<div class="rec-row" onclick="openDrawer('+idx+')"><div class="rec-l"><div class="rec-av" style="background:#EEF2FF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="rec-name">'+r.name+'</div><div class="rec-sub">'+r.type+(r.sub?' · '+r.sub:'')+'</div></div></div><div class="rec-r"><div class="rec-amt cr">'+amtDisplay+'</div><div class="rec-time">'+r.time+'</div>'+(r.status?'<span class="type-pill" style="background:'+(r.status==='Unpaid'||r.status==='Pending'?'#FFFBEB':'#ECFDF5')+';color:'+(r.status==='Unpaid'||r.status==='Pending'?'#B45309':'#059669')+'">'+r.status+'</span>':'')+'</div><span class="chev">›</span></div>';
+    var statusPill=r.status&&r.status!=='null'?'<span class="type-pill" style="background:'+(r.status==='Unpaid'||r.status==='Pending'?'#FFFBEB':'#ECFDF5')+';color:'+(r.status==='Unpaid'||r.status==='Pending'?'#B45309':'#059669')+'">'+r.status+'</span>':'<span class="type-pill" style="background:#EEF2FF;color:#4F46E5">'+r.type+'</span>';
+    return '<div class="rec-row" onclick="openDrawer('+idx+')"><div class="rec-l" style="min-width:0;flex:1"><div class="rec-av" style="background:#EEF2FF;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="min-width:0;overflow:hidden"><div class="rec-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.name+'</div><div class="rec-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.type+(r.sub?' · '+r.sub:'')+'</div></div></div><div class="rec-r" style="flex-shrink:0;margin-left:8px;text-align:right"><div class="rec-amt cr" style="white-space:nowrap">'+amtDisplay+'</div><div class="rec-time">'+r.time+'</div>'+statusPill+'</div><span class="chev" style="flex-shrink:0">›</span></div>';
   }).join('');
 }
 
