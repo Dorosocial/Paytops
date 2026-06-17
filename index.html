@@ -733,10 +733,25 @@ function buildFieldsHTML(d,dark){
     Object.keys(d.fields).forEach(function(key){
       var val=d.fields[key];
       if(val===null||val===undefined||val==='')return;
-      var displayVal=typeof val==='object'?JSON.stringify(val):String(val);
-      // Make long values full width
-      var wide=displayVal.length>30;
-      html+='<div class="f-box'+(wide?' wide':'')+'" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">'+key+'</div><div class="f-val" style="color:'+vc+'">'+displayVal+'</div></div>';
+      var displayVal='';
+      if(Array.isArray(val)){
+        // Format arrays nicely — each item on its own line
+        displayVal=val.map(function(item){
+          if(typeof item==='object'){
+            return Object.values(item).filter(Boolean).join(' — ');
+          }
+          return String(item);
+        }).join('\n');
+        html+='<div class="f-box wide" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">'+key+'</div><div class="f-val" style="color:'+vc+';white-space:pre-line;font-size:12px;line-height:1.7">'+displayVal+'</div></div>';
+      } else if(typeof val==='object'){
+        displayVal=Object.entries(val).map(function(e){return e[0]+': '+e[1];}).join(' · ');
+        var wide=displayVal.length>30;
+        html+='<div class="f-box'+(wide?' wide':'')+'" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">'+key+'</div><div class="f-val" style="color:'+vc+'">'+displayVal+'</div></div>';
+      } else {
+        displayVal=String(val);
+        var wide=displayVal.length>30;
+        html+='<div class="f-box'+(wide?' wide':'')+'" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">'+key+'</div><div class="f-val" style="color:'+vc+'">'+displayVal+'</div></div>';
+      }
     });
   }
 
@@ -987,8 +1002,19 @@ function openDrawer(idx){
     Object.keys(d.fields).forEach(function(key){
       var val=d.fields[key];
       if(val===null||val===undefined||val==='')return;
-      var displayVal=typeof val==='object'?JSON.stringify(val):String(val);
-      rows+='<div class="d-row"><span class="d-key">'+key+'</span><span class="d-val">'+displayVal+'</span></div>';
+      var displayVal='';
+      if(Array.isArray(val)){
+        displayVal=val.map(function(item){
+          if(typeof item==='object'){return Object.values(item).filter(Boolean).join(' — ');}
+          return String(item);
+        }).join('\n');
+        rows+='<div class="d-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="d-key">'+key+'</span><span class="d-val" style="text-align:left;white-space:pre-line;font-size:12px;line-height:1.7">'+displayVal+'</span></div>';
+      } else if(typeof val==='object'){
+        displayVal=Object.entries(val).map(function(e){return e[0]+': '+e[1];}).join(' · ');
+        rows+='<div class="d-row"><span class="d-key">'+key+'</span><span class="d-val">'+displayVal+'</span></div>';
+      } else {
+        rows+='<div class="d-row"><span class="d-key">'+key+'</span><span class="d-val">'+String(val)+'</span></div>';
+      }
     });
   }
   if(!rows){rows='<div class="d-row"><span class="d-key">Document type</span><span class="d-val">'+(d.documentType||r.type)+'</span></div>';}
