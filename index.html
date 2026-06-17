@@ -567,8 +567,13 @@ document.getElementById('file-dash').addEventListener('change',function(e){
     document.getElementById('prev-dash').src=ev.target.result;
     buildSteps('steps-dash');
     await runSteps('steps-dash');
-    try{S.parsed=await callAI(b64,file.type,IND[S.ind].prompt);}
-    catch(err){S.parsed=fallback();}
+    try{
+      S.parsed=await callAI(b64,file.type,IND[S.ind].prompt);
+    }catch(err){
+      console.error('AI Error:',err);
+      toast('AI Error: '+err.message);
+      S.parsed=fallback();
+    }
     showResultDash();
   };
   r.readAsDataURL(file);
@@ -634,6 +639,7 @@ async function compressImage(b64,mt){
 
 async function callAI(b64,mt,prompt){
   var compressed=await compressImage(b64,mt);
+  console.log('Sending to Worker, compressed size:',compressed.length);
   var res=await fetch('https://paytops-ai.socialmoa95.workers.dev/',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[
@@ -641,7 +647,10 @@ async function callAI(b64,mt,prompt){
       {type:'text',text:prompt}
     ]}]})
   });
+  console.log('Worker response status:',res.status);
   var d=await res.json();
+  console.log('Worker response:',JSON.stringify(d).slice(0,200));
+  if(d.error){throw new Error(d.error+': '+(d.message||d.raw||''));}
   var t=(d.content.find(function(c){return c.type==='text';})||{}).text||'{}';
   return JSON.parse(t.replace(/```json|```/g,'').trim());
 }
