@@ -306,9 +306,9 @@ body{font-family:'Inter',sans-serif;background:var(--surf);color:var(--ink);-web
   <!-- HOME TAB -->
   <div class="scroll-body" id="tab-home">
     <div class="stats-grid">
-      <div class="stat-box dark"><div class="s-lbl" id="sl1">Received today</div><div class="s-val em" id="sv1">GHS 0</div><div class="s-sub" id="ss1">0 payments</div></div>
-      <div class="stat-box"><div class="s-lbl">This month</div><div class="s-val am" id="sv2">GHS 0</div><div class="s-sub" id="ss2">running total</div></div>
-      <div class="stat-box"><div class="s-lbl">Pending</div><div class="s-val" id="sv3">0</div><div class="s-sub">unpaid items</div></div>
+      <div class="stat-box dark"><div class="s-lbl" id="sl1">Today</div><div class="s-val em" id="sv1">0</div><div class="s-sub" id="ss1">documents</div></div>
+      <div class="stat-box"><div class="s-lbl">Total records</div><div class="s-val am" id="sv2">0</div><div class="s-sub" id="ss2">all time</div></div>
+      <div class="stat-box"><div class="s-lbl">Pending</div><div class="s-val" id="sv3">0</div><div class="s-sub">unpaid/pending</div></div>
       <div class="stat-box"><div class="s-lbl">Docs parsed</div><div class="s-val" id="sv4">0</div><div class="s-sub">by Paytops AI</div></div>
     </div>
     <div class="card" style="margin-bottom:12px">
@@ -439,23 +439,35 @@ body{font-family:'Inter',sans-serif;background:var(--surf);color:var(--ink);-web
 </div>
 <div class="toast" id="toast"></div>
 <script>
+const DYNAMIC_PROMPT=`You are a document parser for Ghanaian businesses. Look at this document carefully and extract ALL information visible on it.
+
+Return ONLY a JSON object with these exact fields:
+{
+  "documentType": "exact type of document e.g. Waybill, Sales Receipt, Supplier Invoice, Fee Payment Slip, MoMo Transfer, Delivery Note, Purchase Order, Prescription, Patient Bill, etc.",
+  "primaryName": "the most important person or company name on this document",
+  "primaryAmount": a number representing the main monetary amount (digits only, no currency symbol),
+  "date": "the date on the document",
+  "reference": "any reference number, receipt number, invoice number, waybill number etc.",
+  "status": "Paid, Unpaid, Pending, Delivered, or null if not applicable",
+  "fields": {
+    "key1": "value1",
+    "key2": "value2"
+  }
+}
+
+For the "fields" object: extract EVERY piece of information visible on the document as key-value pairs. Use natural, readable key names. Include everything — names, addresses, phone numbers, items, quantities, prices, vehicle numbers, driver names, destinations, student names, classes, medications, doctors, balances, signatures, stamps, anything readable. Do not skip any field. If a value is a number or amount, include the currency if shown.
+
+Return ONLY the JSON. No explanation. No markdown.`;
+
 const IND={
-  school:{name:'School',docs:['Fee Slip','Receipt','Admission Form','Report Card'],stats:['Fees today','This term','Unpaid','Docs parsed'],
-    prompt:'Parse this Ghanaian school document. Return ONLY JSON: {"documentType":"string","studentName":"string","class":"string","term":"string","amountPaid":number,"balance":number,"date":"string","reference":"string"}'},
-  wholesale:{name:'Wholesaler',docs:['Supplier Invoice','Purchase Order','Delivery Receipt','Customer Receipt'],stats:['Sales today','This month','Pending orders','Docs parsed'],
-    prompt:'Parse this Ghanaian wholesale document. Return ONLY JSON: {"documentType":"string","party":"string","items":"string","totalAmount":number,"date":"string","reference":"string","isPaid":boolean}'},
-  logistics:{name:'Logistics',docs:['Waybill','Delivery Note','Loading Order','Driver Receipt'],stats:['Deliveries today','This month','In transit','Docs parsed'],
-    prompt:'Parse this Ghanaian logistics document. Return ONLY JSON: {"documentType":"string","driver":"string","origin":"string","destination":"string","goods":"string","freightCost":number,"date":"string","reference":"string"}'},
-  microfinance:{name:'Microfinance',docs:['Repayment Slip','Loan Application','Savings Deposit','Withdrawal'],stats:['Collections today','Outstanding','Overdue','Docs parsed'],
-    prompt:'Parse this Ghanaian microfinance document. Return ONLY JSON: {"documentType":"string","clientName":"string","accountNumber":"string","amount":number,"loanBalance":number,"date":"string","reference":"string","isOverdue":boolean}'},
-  pharmacy:{name:'Pharmacy',docs:['Prescription','Supplier Invoice','Sales Receipt','Stock Count'],stats:['Sales today','Stock value','Low stock','Docs parsed'],
-    prompt:'Parse this Ghanaian pharmacy document. Return ONLY JSON: {"documentType":"string","party":"string","medications":"string","totalAmount":number,"doctorName":"string","date":"string","reference":"string"}'},
-  clinic:{name:'Clinic',docs:['Patient Bill','Lab Request','Appointment Slip','Insurance Form'],stats:['Patients today','Revenue today','Unpaid bills','Docs parsed'],
-    prompt:'Parse this Ghanaian clinic document. Return ONLY JSON: {"documentType":"string","patientName":"string","services":"string","totalAmount":number,"doctorName":"string","date":"string","reference":"string","isPaid":boolean}'},
-  construction:{name:'Construction',docs:['Material Invoice','Labour Receipt','Delivery Note','Purchase Order'],stats:['Spent today','Project total','Pending','Docs parsed'],
-    prompt:'Parse this Ghanaian construction document. Return ONLY JSON: {"documentType":"string","party":"string","materials":"string","totalAmount":number,"site":"string","date":"string","reference":"string"}'},
-  general:{name:'General',docs:['Receipt','Invoice','MoMo Slip','Waybill','Any Document'],stats:['Received today','This month','Pending','Docs parsed'],
-    prompt:'Parse this Ghanaian business document. Return ONLY JSON: {"documentType":"string","party":"string","amount":number,"description":"string","date":"string","reference":"string"}'}
+  school:{name:'School',docs:['Fee Slip','Receipt','Admission Form','Report Card'],stats:['Docs today','This term','Unpaid','Docs parsed']},
+  wholesale:{name:'Wholesaler',docs:['Supplier Invoice','Purchase Order','Delivery Receipt','Customer Receipt'],stats:['Docs today','This month','Pending','Docs parsed']},
+  logistics:{name:'Logistics',docs:['Waybill','Delivery Note','Loading Order','Driver Receipt'],stats:['Docs today','This month','In transit','Docs parsed']},
+  microfinance:{name:'Microfinance',docs:['Repayment Slip','Loan Application','Savings Deposit','Withdrawal'],stats:['Docs today','Outstanding','Overdue','Docs parsed']},
+  pharmacy:{name:'Pharmacy',docs:['Prescription','Supplier Invoice','Sales Receipt','Stock Count'],stats:['Docs today','Stock value','Low stock','Docs parsed']},
+  clinic:{name:'Clinic',docs:['Patient Bill','Lab Request','Appointment Slip','Insurance Form'],stats:['Docs today','Revenue today','Unpaid bills','Docs parsed']},
+  construction:{name:'Construction',docs:['Material Invoice','Labour Receipt','Delivery Note','Purchase Order'],stats:['Docs today','Project total','Pending','Docs parsed']},
+  general:{name:'General',docs:['Receipt','Invoice','MoMo Slip','Waybill','Any Document'],stats:['Docs today','This month','Pending','Docs parsed']}
 };
 
 var S={ind:'general',bizName:'My Business',ownerName:'',pin:'',recs:[],notifs:[],staff:[],staffLink:'',parsed:null,parsedStaff:null,selDoc:null,activeFilter:'All',todayAmt:0,monthAmt:0,pending:0,docCount:0,obPin:'',staffUploads:[]};
@@ -568,7 +580,7 @@ document.getElementById('file-dash').addEventListener('change',function(e){
     buildSteps('steps-dash');
     await runSteps('steps-dash');
     try{
-      S.parsed=await callAI(b64,file.type,IND[S.ind].prompt);
+      S.parsed=await callAI(b64,file.type,DYNAMIC_PROMPT);
     }catch(err){
       console.error('AI Error:',err);
       toast('AI Error: '+err.message);
@@ -591,7 +603,7 @@ document.getElementById('file-staff').addEventListener('change',function(e){
     document.getElementById('prev-staff').src=ev.target.result;
     buildSteps('steps-staff');
     await runSteps('steps-staff');
-    try{S.parsedStaff=await callAI(b64,file.type,IND[S.ind].prompt);}
+    try{S.parsedStaff=await callAI(b64,file.type,DYNAMIC_PROMPT);}
     catch(err){S.parsedStaff=fallback();}
     showStaffResult();
   };
@@ -703,35 +715,50 @@ function showStaffResult(){
 }
 
 function buildFieldsHTML(d,dark){
-  var fmt=function(n){return (n!=null&&n!==''&&n!==undefined)?'GHS '+Number(n).toLocaleString():'—';};
   var bg=dark?'rgba(255,255,255,.05)':'var(--surf)';
   var bc=dark?'rgba(255,255,255,.07)':'var(--line)';
   var kc=dark?'rgba(255,255,255,.4)':'var(--sub)';
   var vc=dark?'#fff':'var(--ink)';
-  var maps={
-    school:[{k:'Student',v:d.studentName||'—'},{k:'Class',v:d.class||'—'},{k:'Term',v:d.term||'—'},{k:'Amount paid',v:fmt(d.amountPaid||d.amount),m:true},{k:'Balance',v:d.balance>0?fmt(d.balance):'Fully paid',w:d.balance>0},{k:'Reference',v:d.reference||'—'}],
-    wholesale:[{k:'Party',v:d.party||'—',wide:true},{k:'Amount',v:fmt(d.totalAmount||d.amount),m:true},{k:'Status',v:d.isPaid===false?'Unpaid':'Paid',w:d.isPaid===false},{k:'Items',v:d.items||d.description||'—',wide:true},{k:'Reference',v:d.reference||'—'},{k:'Date',v:d.date||'Today'}],
-    logistics:[{k:'Driver',v:d.driver||d.party||'—'},{k:'Freight',v:fmt(d.freightCost||d.amount),m:true},{k:'From',v:d.origin||'—'},{k:'To',v:d.destination||'—'},{k:'Goods',v:d.goods||'—',wide:true},{k:'Reference',v:d.reference||'—'}],
-    microfinance:[{k:'Client',v:d.clientName||d.party||'—'},{k:'Amount',v:fmt(d.amount),m:true},{k:'Account',v:d.accountNumber||'—'},{k:'Balance',v:d.loanBalance>0?fmt(d.loanBalance):'—',w:d.loanBalance>0},{k:'Reference',v:d.reference||'—'},{k:'Date',v:d.date||'Today'}],
-    pharmacy:[{k:'Patient/Supplier',v:d.party||'—',wide:true},{k:'Amount',v:fmt(d.totalAmount||d.amount),m:true},{k:'Doctor',v:d.doctorName||'—'},{k:'Medications',v:d.medications||'—',wide:true},{k:'Reference',v:d.reference||'—'}],
-    clinic:[{k:'Patient',v:d.patientName||d.party||'—'},{k:'Total',v:fmt(d.totalAmount||d.amount),m:true},{k:'Services',v:d.services||'—',wide:true},{k:'Status',v:d.isPaid?'Paid':'Unpaid',w:!d.isPaid},{k:'Reference',v:d.reference||'—'}],
-    construction:[{k:'Supplier/Worker',v:d.party||'—',wide:true},{k:'Amount',v:fmt(d.totalAmount||d.amount),m:true},{k:'Site',v:d.site||'—'},{k:'Materials',v:d.materials||'—',wide:true},{k:'Reference',v:d.reference||'—'}],
-    general:[{k:'From/Payer',v:d.party||d.senderOrPayer||'—'},{k:'Amount',v:fmt(d.amount),m:true},{k:'Description',v:d.description||'—',wide:true},{k:'Reference',v:d.reference||'—'},{k:'Date',v:d.date||'Today'}]
-  };
-  var fields=(maps[S.ind]||maps.general);
-  return fields.map(function(f){
-    return '<div class="f-box'+(f.wide?' wide':'')+'" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">'+f.k+'</div><div class="f-val'+(f.m?' money':f.w?' warn':'')+'" style="'+((!f.m&&!f.w)?'color:'+vc:'')+'">'+(f.v||'—')+'</div></div>';
-  }).join('');
+  var html='';
+
+  // Always show primary amount prominently if exists
+  if(d.primaryAmount){
+    html+='<div class="f-box" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">Amount</div><div class="f-val money">GHS '+Number(d.primaryAmount).toLocaleString()+'</div></div>';
+  }
+  // Show status if exists
+  if(d.status&&d.status!=='null'){
+    var isWarn=d.status==='Unpaid'||d.status==='Pending'||d.status==='Overdue';
+    html+='<div class="f-box" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">Status</div><div class="f-val'+(isWarn?' warn':' ok')+'">'+d.status+'</div></div>';
+  }
+
+  // Render ALL fields from the dynamic fields object
+  if(d.fields&&typeof d.fields==='object'){
+    Object.keys(d.fields).forEach(function(key){
+      var val=d.fields[key];
+      if(val===null||val===undefined||val==='')return;
+      var displayVal=typeof val==='object'?JSON.stringify(val):String(val);
+      // Make long values full width
+      var wide=displayVal.length>30;
+      html+='<div class="f-box'+(wide?' wide':'')+'" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">'+key+'</div><div class="f-val" style="color:'+vc+'">'+displayVal+'</div></div>';
+    });
+  }
+
+  // Fallback if no fields
+  if(!html){
+    html='<div class="f-box wide" style="background:'+bg+';border-color:'+bc+'"><div class="f-key" style="color:'+kc+'">Document</div><div class="f-val" style="color:'+vc+'">'+(d.documentType||'Parsed successfully')+'</div></div>';
+  }
+
+  return html;
 }
 
 function autoSaveFromStaff(d){
   var amt=getAmt(d); var name=getName(d);
-  var isIn=S.ind!=='construction'&&d.isPaid!==false;
-  var rec={name:name,sub:d.reference||d.description||d.documentType||'',amt:amt,type:d.documentType||S.selDoc||'Document',in:isIn,av:isIn?'#ECFDF5':'#FFFBEB',time:'Today '+nowTime(),detail:d};
+  var isPending=d.status==='Unpaid'||d.status==='Pending'||d.status==='Overdue';
+  var rec={name:name,sub:d.reference||'',amt:amt,type:d.documentType||S.selDoc||'Document',status:d.status,av:'#EEF2FF',time:'Today '+nowTime(),detail:d};
   S.recs.unshift(rec);
-  S.todayAmt+=amt; S.monthAmt+=amt; S.docCount++;
-  if(d.isPaid===false||d.isOverdue)S.pending++;
-  addNotif(name,amt,d.documentType||'Document',isIn);
+  S.docCount++;
+  if(isPending)S.pending++;
+  addNotif(name,amt,d.documentType||'Document',!isPending);
   S.staffUploads.unshift({name:name,type:d.documentType||'Document',time:nowTime()});
   if(S.staffUploads.length>5)S.staffUploads.pop();
   refreshStats(); renderRecs();
@@ -748,11 +775,11 @@ function staffUploadAnother(){
 function saveRec(){
   var d=S.parsed; if(!d)return;
   var amt=getAmt(d); var name=getName(d);
-  var isIn=S.ind!=='construction'&&d.isPaid!==false;
-  S.recs.unshift({name:name,sub:d.reference||d.description||d.documentType||'',amt:amt,type:d.documentType||S.selDoc||'Document',in:isIn,av:isIn?'#ECFDF5':'#FFFBEB',time:'Today '+nowTime(),detail:d});
-  S.todayAmt+=amt; S.monthAmt+=amt; S.docCount++;
-  if(d.isPaid===false||d.isOverdue)S.pending++;
-  addNotif(name,amt,d.documentType||'Document',isIn);
+  var isPending=d.status==='Unpaid'||d.status==='Pending'||d.status==='Overdue';
+  S.recs.unshift({name:name,sub:d.reference||'',amt:amt,type:d.documentType||S.selDoc||'Document',status:d.status,av:'#EEF2FF',time:'Today '+nowTime(),detail:d});
+  S.docCount++;
+  if(isPending)S.pending++;
+  addNotif(name,amt,d.documentType||'Document',!isPending);
   refreshStats(); renderRecs(); resetUpload();
   toast('Saved to dashboard');
 }
@@ -813,8 +840,8 @@ async function runDemo(){
   showResultDash();
   toast('Demo document parsed');
 }
-function getAmt(d){return d.amountPaid||d.totalAmount||d.freightCost||d.amount||0;}
-function getName(d){return d.studentName||d.clientName||d.patientName||d.driver||d.party||d.senderOrPayer||'Unknown';}
+function getAmt(d){return d.primaryAmount||0;}
+function getName(d){return d.primaryName||d.documentType||'Unknown';}
 function nowTime(){return new Date().toLocaleTimeString('en-GH',{hour:'2-digit',minute:'2-digit'});}
 
 /* NOTIFICATIONS */
@@ -868,16 +895,17 @@ function loadDemoRecs(){
 
 function refreshStats(){
   var tr=S.recs.filter(function(r){return r.time.indexOf('Today')>-1;});
-  document.getElementById('sv1').textContent='GHS '+S.todayAmt.toLocaleString();
-  document.getElementById('ss1').textContent=tr.length+' payments';
-  document.getElementById('sv2').textContent='GHS '+S.monthAmt.toLocaleString();
-  document.getElementById('ss2').textContent=S.recs.length+' total';
+  var todayDocs=tr.length;
+  document.getElementById('sv1').textContent=todayDocs;
+  document.getElementById('ss1').textContent='documents today';
+  document.getElementById('sv2').textContent=S.recs.length;
+  document.getElementById('ss2').textContent='total records';
   document.getElementById('sv3').textContent=S.pending;
   document.getElementById('sv4').textContent=S.docCount;
-  document.getElementById('rpt-today').textContent='GHS '+S.todayAmt.toLocaleString();
-  document.getElementById('rpt-today-sub').textContent=tr.length+' transactions today';
-  document.getElementById('rpt-month').textContent='GHS '+S.monthAmt.toLocaleString();
-  document.getElementById('rpt-month-sub').textContent=S.recs.length+' records this month';
+  document.getElementById('rpt-today').textContent=todayDocs;
+  document.getElementById('rpt-today-sub').textContent='documents uploaded today';
+  document.getElementById('rpt-month').textContent=S.recs.length;
+  document.getElementById('rpt-month-sub').textContent='total records this session';
   document.getElementById('rpt-parsed').textContent=S.docCount;
   document.getElementById('rpt-pending').textContent=S.pending;
   buildBarChart();
@@ -901,8 +929,8 @@ function renderRecs(){
   if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>No records found.</p></div>';return;}
   list.innerHTML=data.map(function(r){
     var idx=S.recs.indexOf(r);
-    var pc=r.in?{bg:'#ECFDF5',c:'#059669'}:{bg:'#FFFBEB',c:'#B45309'};
-    return '<div class="rec-row" onclick="openDrawer('+idx+')"><div class="rec-l"><div class="rec-av" style="background:'+r.av+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(r.in?'#059669':'#B45309')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="rec-name">'+r.name+'</div><div class="rec-sub">'+r.sub+'</div></div></div><div class="rec-r"><div class="rec-amt '+(r.in?'cr':'dr')+'">'+(r.in?'+':'')+'GHS '+r.amt.toLocaleString()+'</div><div class="rec-time">'+r.time+'</div><span class="type-pill" style="background:'+pc.bg+';color:'+pc.c+'">'+r.type+'</span></div><span class="chev">›</span></div>';
+    var amtDisplay=r.amt&&r.amt>0?'GHS '+Number(r.amt).toLocaleString():'—';
+    return '<div class="rec-row" onclick="openDrawer('+idx+')"><div class="rec-l"><div class="rec-av" style="background:#EEF2FF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="rec-name">'+r.name+'</div><div class="rec-sub">'+r.type+(r.sub?' · '+r.sub:'')+'</div></div></div><div class="rec-r"><div class="rec-amt cr">'+amtDisplay+'</div><div class="rec-time">'+r.time+'</div>'+(r.status?'<span class="type-pill" style="background:'+(r.status==='Unpaid'||r.status==='Pending'?'#FFFBEB':'#ECFDF5')+';color:'+(r.status==='Unpaid'||r.status==='Pending'?'#B45309':'#059669')+'">'+r.status+'</span>':'')+'</div><span class="chev">›</span></div>';
   }).join('');
 }
 
@@ -911,25 +939,38 @@ function openDrawer(idx){
   var r=S.recs[idx]; if(!r)return;
   var d=r.detail||{};
   document.getElementById('d-av').style.background=r.av;
-  document.getElementById('d-av').innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+(r.in?'#059669':'#B45309')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  document.getElementById('d-av').innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
   document.getElementById('d-name').textContent=r.name;
-  document.getElementById('d-type').textContent=r.type+' · '+r.time;
+  document.getElementById('d-type').textContent=(d.documentType||r.type)+' · '+r.time;
   var ae=document.getElementById('d-amt');
-  ae.textContent=(r.in?'+':'')+'GHS '+r.amt.toLocaleString();
-  ae.className='drawer-amt-val'+(r.in?'':' dr');
-  var fmt=function(n){return(n!=null&&n!==''&&n!==undefined)?'GHS '+Number(n).toLocaleString():'—';};
-  var maps={
-    school:[['Student',d.studentName],['Class',d.class],['Term',d.term],['Amount paid',fmt(d.amountPaid||d.amount),'ok'],['Balance',d.balance>0?fmt(d.balance):'Fully paid',d.balance>0?'warn':'ok'],['Reference',d.reference],['Date',d.date]],
-    wholesale:[['Supplier/Customer',d.party],['Total amount',fmt(d.totalAmount||d.amount),'ok'],['Items',d.items||d.description],['Status',d.isPaid===false?'Unpaid':'Paid',d.isPaid===false?'warn':'ok'],['Reference',d.reference],['Date',d.date]],
-    logistics:[['Driver',d.driver||d.party],['Freight',fmt(d.freightCost||d.amount),'ok'],['From',d.origin],['To',d.destination],['Goods',d.goods],['Reference',d.reference]],
-    microfinance:[['Client',d.clientName||d.party],['Amount',fmt(d.amount),'ok'],['Account',d.accountNumber],['Balance',d.loanBalance>0?fmt(d.loanBalance):'—',d.loanBalance>0?'warn':''],['Reference',d.reference],['Date',d.date]],
-    pharmacy:[['Patient/Supplier',d.party],['Total',fmt(d.totalAmount||d.amount),'ok'],['Medications',d.medications],['Doctor',d.doctorName],['Reference',d.reference]],
-    clinic:[['Patient',d.patientName||d.party],['Total bill',fmt(d.totalAmount||d.amount),'ok'],['Services',d.services],['Status',d.isPaid?'Paid':'Unpaid',d.isPaid?'ok':'warn'],['Reference',d.reference]],
-    construction:[['Supplier/Worker',d.party],['Amount',fmt(d.totalAmount||d.amount),'ok'],['Materials',d.materials],['Site',d.site],['Reference',d.reference]],
-    general:[['From/Payer',d.party||d.senderOrPayer],['Amount',fmt(d.amount),'ok'],['Description',d.description],['Reference',d.reference],['Date',d.date]]
-  };
-  var rows=(maps[S.ind]||maps.general).filter(function(x){return x[1]&&x[1]!=='—'&&x[1]!==undefined;});
-  document.getElementById('d-rows').innerHTML=rows.map(function(x){return '<div class="d-row"><span class="d-key">'+x[0]+'</span><span class="d-val'+(x[2]?' '+x[2]:'')+'">'+(x[1]||'—')+'</span></div>';}).join('');
+  if(r.amt&&r.amt>0){
+    ae.textContent='GHS '+Number(r.amt).toLocaleString();
+    ae.className='drawer-amt-val';
+    ae.style.display='block';
+  } else {
+    ae.style.display='none';
+  }
+  // Build drawer rows dynamically from all fields
+  var rows='';
+  // Show status if present
+  if(d.status&&d.status!=='null'){
+    var isWarn=d.status==='Unpaid'||d.status==='Pending'||d.status==='Overdue';
+    rows+='<div class="d-row"><span class="d-key">Status</span><span class="d-val '+(isWarn?'warn':'ok')+'">'+d.status+'</span></div>';
+  }
+  // Show reference and date from top level
+  if(d.reference){rows+='<div class="d-row"><span class="d-key">Reference</span><span class="d-val">'+d.reference+'</span></div>';}
+  if(d.date){rows+='<div class="d-row"><span class="d-key">Date</span><span class="d-val">'+d.date+'</span></div>';}
+  // Show ALL dynamic fields
+  if(d.fields&&typeof d.fields==='object'){
+    Object.keys(d.fields).forEach(function(key){
+      var val=d.fields[key];
+      if(val===null||val===undefined||val==='')return;
+      var displayVal=typeof val==='object'?JSON.stringify(val):String(val);
+      rows+='<div class="d-row"><span class="d-key">'+key+'</span><span class="d-val">'+displayVal+'</span></div>';
+    });
+  }
+  if(!rows){rows='<div class="d-row"><span class="d-key">Document type</span><span class="d-val">'+(d.documentType||r.type)+'</span></div>';}
+  document.getElementById('d-rows').innerHTML=rows;
   document.getElementById('overlay').classList.add('on');
   document.getElementById('drawer').classList.add('on');
   document.body.style.overflow='hidden';
