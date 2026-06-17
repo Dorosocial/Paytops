@@ -616,11 +616,28 @@ async function runSteps(id){
   document.getElementById(id+'-sp-3').style.display='none';
 }
 
+async function compressImage(b64,mt){
+  return new Promise(function(resolve){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var max=1024;var w=img.width;var h=img.height;
+      if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}
+      canvas.width=w;canvas.height=h;
+      var ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
+      var compressed=canvas.toDataURL('image/jpeg',0.7);
+      resolve(compressed.split(',')[1]);
+    };
+    img.src='data:'+(mt||'image/jpeg')+';base64,'+b64;
+  });
+}
+
 async function callAI(b64,mt,prompt){
+  var compressed=await compressImage(b64,mt);
   var res=await fetch('https://paytops-ai.socialmoa95.workers.dev/',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[
-      {type:'image',source:{type:'base64',media_type:mt||'image/jpeg',data:b64}},
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:compressed}},
       {type:'text',text:prompt}
     ]}]})
   });
